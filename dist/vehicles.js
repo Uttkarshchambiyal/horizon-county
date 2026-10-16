@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
 export const VEHICLES=[
-  {id:'clubsport',name:'H-01 Clubsport',className:'SPORTS COUPE',description:'Low stance. Quick acceleration. Built for the coast road.',color:0xda7944,length:4.8,width:2.16,radius:.45,wheelbase:2.9,roof:1.04,top:58,boostTop:77,accel:14.5,brake:32,turn:.94,grip:17,offRoad:25},
+  {id:'clubsport',name:'Ferrari 458 Italia',className:'ITALIAN SPORTS CAR',description:'Sculpted bodywork, a detailed cockpit and five-spoke alloy wheels.',color:0xcb2527,length:4.53,width:1.94,radius:.36,wheelbase:2.65,roof:.69,top:58,boostTop:77,accel:14.5,brake:32,turn:.94,grip:17,offRoad:25},
   {id:'touring',name:'T-04 Meridian',className:'TOURING SEDAN',description:'A composed daily driver with a longer wheelbase.',color:0x557d89,length:5.1,width:2.08,radius:.46,wheelbase:3.08,roof:1.23,top:53,boostTop:69,accel:12,brake:31,turn:.83,grip:19,offRoad:29},
   {id:'trail',name:'R-09 Summit',className:'ALL-TERRAIN SUV',description:'Raised ride height. More grip on dirt and hillside roads.',color:0x778077,length:5.15,width:2.26,radius:.51,wheelbase:3.12,roof:1.70,top:46,boostTop:60,accel:10,brake:29,turn:.72,grip:16,offRoad:39}
 ];

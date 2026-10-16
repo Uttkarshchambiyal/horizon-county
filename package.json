@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
-    "check": "node --check dist/vehicles.js && node --check dist/traffic.js && node --check dist/traffic-view.js && node --check dist/assets.js && node --check dist/world-data.js && node --check dist/world-view.js && node --check dist/driving.js && node --check dist/stunt.js && node --check dist/controls.js && node --check dist/car.js && node --check dist/game.js && node --check dist/tracks.js && node --check dist/physics.js",
-    "test": "node scripts/check-traffic.mjs && node scripts/check-world-ui.mjs && node scripts/check-world.mjs && node scripts/check-controls.mjs && node scripts/check-physics.mjs"
+    "check": "node --check dist/city-view.js && node --check dist/sports-car.js && node --check dist/vehicles.js && node --check dist/traffic.js && node --check dist/traffic-view.js && node --check dist/assets.js && node --check dist/world-data.js && node --check dist/world-view.js && node --check dist/driving.js && node --check dist/stunt.js && node --check dist/controls.js && node --check dist/car.js && node --check dist/game.js && node --check dist/tracks.js && node --check dist/physics.js",
+    "test": "node scripts/check-city.mjs && node scripts/check-traffic.mjs && node scripts/check-world-ui.mjs && node scripts/check-world.mjs && node scripts/check-controls.mjs && node scripts/check-physics.mjs"
   }
 }

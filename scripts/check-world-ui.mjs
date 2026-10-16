@@ -29,7 +29,7 @@ globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.devicePixelRat
 let callback;globalThis.requestAnimationFrame=fn=>callback=fn;
 class Renderer{constructor(){this.shadowMap={};this.info={render:{}};}setPixelRatio(){}setSize(){}render(){}}
 const source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-const dependencies={THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadWorldAssets:async()=>({loaded:3,total:3})};
+const dependencies={THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadSportsCar:async v=>{v.assetReady=true;return v;},loadWorldAssets:async()=>({loaded:3,total:3})};
 new Function(...Object.keys(dependencies),source)(...Object.values(dependencies));
 const key=(code,key,up=false)=>{for(const fn of listeners.get(up?'keyup':'keydown')||[])fn({code,key,preventDefault(){}});};
 let timestamp=1000;function frames(n){for(let i=0;i<n;i++){timestamp+=1000/60;callback(timestamp);}}

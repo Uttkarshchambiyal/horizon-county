@@ -47,7 +47,7 @@ for(const road of w.roads.filter(r=>['coast','ridge','avenue0','street320'].incl
   console.log('PASS Solid buildings, water recovery, off-road terrain and manual recovery');
 }
 // Exercise scene generation without a GPU, and check all road faces point up.
-const ctx=new Proxy({createImageData:(x,y)=>({data:new Uint8ClampedArray(x*y*4)})},{get:(o,k)=>k in o?o[k]:(()=>{})});
+const ctx=new Proxy({createLinearGradient:()=>({addColorStop(){}}),createImageData:(x,y)=>({data:new Uint8ClampedArray(x*y*4)})},{get:(o,k)=>k in o?o[k]:(()=>{})});
 globalThis.document={createElement:()=>({width:0,height:0,getContext:()=>ctx})};
 const scene=new THREE.Scene(),view=buildOpenWorld(scene,w);let roadMeshes=0;
 scene.traverse(m=>{if(m.material?.color?.getHex()===0x55585a){roadMeshes++;const normals=m.geometry.attributes.normal;for(let i=0;i<normals.count;i++)assert.ok(normals.getY(i)>=0,'Road face points below ground: '+m.name);}});

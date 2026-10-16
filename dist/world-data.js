@@ -30,7 +30,7 @@ function makeRoad(id,name,points,width=22,kind='street',closed=false){
   return {id,name,width,kind,closed,length,samples,frame};
 }
 export function makeOpenWorld(){
-  const roads=[],buildings=[],colliders=[],parkedCars=[],random=seeded();
+  const roads=[],buildings=[],colliders=[],parkedCars=[],blocks=[],random=seeded();
   const xs=[-720,-480,-240,0,240,480,720],zs=[-400,-160,80,320,560,800];
   for(const x of xs)roads.push(makeRoad('avenue'+x,x===-720?'Pacific Boulevard':x===0?'Horizon Avenue':'Central Avenue',[ [x,1030],[x,-400]],x===0?30:22));
   for(const z of zs)roads.push(makeRoad('street'+z,z===320?'Marina Drive':z===-400?'Northgate Road':'Market Street',[[-980,z],[970,z]],z===320?28:22));
@@ -53,31 +53,70 @@ export function makeOpenWorld(){
       if(d<d2){d2=d;best={road:seg.road,x:px,z:pz,distance:Math.sqrt(d),s:a.s+(b.s-a.s)*t,angle:Math.atan2(-dx,-dz)};}
     }return best;
   }
-  function addBuilding(x,z,w,d,h,type){
-    const road=nearestRoad(x,z);if(road&&road.distance<road.road.width/2+Math.hypot(w,d)/2+7)return;
-    if(terrainHeight(x,z)<2||x<coast(z)+160)return;
-    const b={x,z,w,d,h,y:terrainHeight(x,z),type,style:Math.floor(random()*5)};
-    buildings.push(b);colliders.push({minX:x-w/2,maxX:x+w/2,minZ:z-d/2,maxZ:z+d/2});
+  function addBuilding(x,z,w,d,h,type,facing=0){
+    if(terrainHeight(x,z)<2||x<coast(z)+125)return false;
+    // Test the complete footprint, including nearby crossing roads. The old
+    // circular clearance left huge unused setbacks around every city block.
+    for(const [dx,dz] of[[0,0],[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2],[0,-d/2],[0,d/2],[-w/2,0],[w/2,0]]){
+      const road=nearestRoad(x+dx,z+dz);if(road&&road.distance<road.road.width/2+6)return false;
+    }
+    if(buildings.some(b=>Math.abs(b.x-x)<(b.w+w)/2+2&&Math.abs(b.z-z)<(b.d+d)/2+2))return false;
+    const b={id:buildings.length,x,z,w,d,h,y:terrainHeight(x,z),type,facing,style:Math.floor(random()*8)};
+    buildings.push(b);colliders.push({minX:x-w/2,maxX:x+w/2,minZ:z-d/2,maxZ:z+d/2});return true;
   }
-  for(let ix=0;ix<xs.length-1;ix++)for(let iz=0;iz<zs.length-1;iz++){
+  function streetType(ix,iz,i){
     const cx=(xs[ix]+xs[ix+1])/2,cz=(zs[iz]+zs[iz+1])/2;
-    const downtown=Math.abs(cx)<390&&cz<450;
-    for(const dx of[-54,0,54])for(const dz of[-48,25]){
-      if(random()<.1)continue;
-      const h=downtown?30+random()**1.4*115:7+random()*22;
-      addBuilding(cx+dx,cz+dz,30+random()*14,28+random()*15,h,downtown?'tower':'shop');
+    const choices=cz>650?['warehouse','retail','loft','garage']:cx>450?['house','apartment','retail','house']:cx<-450?['apartment','motel','retail','loft']:['loft','apartment','artdeco','retail','setback','garage'];
+    return choices[(i+ix*3+iz*2)%choices.length];
+  }
+  const heights={house:6,apartment:17,retail:5,loft:22,motel:10,warehouse:10,garage:13,artdeco:40,setback:45,glass:70,round:90,civic:23,villa:8};
+  for(let ix=0;ix<xs.length-1;ix++)for(let iz=0;iz<zs.length-1;iz++){
+    const xa=xs[ix],xb=xs[ix+1],za=zs[iz],zb=zs[iz+1],cx=(xa+xb)/2,cz=(za+zb)/2,id=blocks.length;
+    const use=ix===3&&iz===3?'plaza':id===26?'service':id%7===0?'park':id%4===0?'parking':'courtyard';
+    blocks.push({id,x:cx,z:cz,w:126,d:112,use,y:terrainHeight(cx,cz)});
+    // Buildings now line the pavement instead of floating in the block centre.
+    for(let i=0;i<4;i++)for(const side of[-1,1]){
+      const type=streetType(ix,iz,i+(side>0?1:0)),x=xa+44+i*50,z=side<0?za+40:zb-40;
+      const w=type==='house'?32:42,d=type==='motel'?34:28+random()*5,h=heights[type]*(.83+random()*.32);
+      addBuilding(x,z,w,d,h,type,side<0?Math.PI:0);
+    }
+    for(let i=0;i<2;i++)for(const side of[-1,1]){
+      const type=streetType(ix,iz,i+4+(side>0?1:0)),x=side<0?xa+40:xb-40,z=za+94+i*52;
+      addBuilding(x,z,30,42,heights[type]*(.85+random()*.3),type,side<0?-Math.PI/2:Math.PI/2);
+    }
+    if(use==='courtyard'){
+      const core=Math.abs(cx)<400&&cz<500,type=core?(id===10?'civic':['glass','round','setback','artdeco'][(ix*3+iz*5+Math.floor(random()*4))%4]):cx>450?'villa':'apartment';
+      addBuilding(cx,cz,core?65:54,core?64:48,heights[type]*(.9+random()*.7),type);
     }
   }
-  // Low-rise beachfront and eastern residential blocks.
-  for(let z=-340;z<880;z+=76){addBuilding(-830,z,44,43,7+random()*13,'hotel');addBuilding(840,z,48,43,6+random()*12,'house');}
-  for(let x=-600;x<800;x+=120)addBuilding(x,940,65,55,7+random()*12,'warehouse');
-  for(let z=-260;z<30;z+=90)addBuilding(1190,z,48,62,14,'warehouse');
+  // The beachfront has hotels, diners and low-rise apartments; the eastern
+  // edge has homes. Suburban villas also occupy the previously empty coast.
+  for(let z=-350,i=0;z<1000;z+=64,i++){
+    addBuilding(-824,z,48,49,11+random()*14,['motel','apartment','retail','loft'][i%4],Math.PI/2);
+    addBuilding(839,z,48,43,6+random()*6,i%4===0?'retail':'house',-Math.PI/2);
+  }
+  for(let x=-600,i=0;x<850;x+=86,i++)addBuilding(x,945,63,56,8+random()*8,i%4===0?'garage':'warehouse');
+  for(let z=-270;z<80;z+=82)addBuilding(1190,z,51,60,13,'warehouse',-Math.PI/2);
+  const coastRoad=roads.find(r=>r.id==='coast');
+  for(let distance=380;distance<coastRoad.length;distance+=155){
+    const f=coastRoad.frame(distance);if(f.z>-500&&f.x<950)continue;
+    for(const side of[-1,1]){const x=f.x+f.nx*side*62,z=f.z+f.nz*side*62;if(x<-1100||x>1700||z>1200)continue;addBuilding(x,z,30+random()*15,26+random()*12,6+random()*7,f.z>650?'warehouse':'villa',f.angle+Math.PI/2);}
+  }
   for(const building of buildings){
-    if(random()>.28)continue;
+    if(parkedCars.length>=78||random()>.18)continue;
     const x=building.x+building.w/2+5,z=building.z,road=nearestRoad(x,z);
     if(road&&road.distance<road.road.width/2+5)continue;
+    if(buildings.some(b=>Math.abs(b.x-x)<b.w/2+1.5&&Math.abs(b.z-z)<b.d/2+3))continue;
     parkedCars.push({x,z,y:terrainHeight(x,z),color:Math.floor(random()*5)});
     colliders.push({minX:x-1.1,maxX:x+1.1,minZ:z-2.4,maxZ:z+2.4});
+  }
+  for(const block of blocks){
+    const {x,z,use}=block;
+    if(use==='park'||use==='plaza')colliders.push({minX:x-9,maxX:x+9,minZ:z-9,maxZ:z+9});
+    if(use==='service')for(const sx of[-1,1])for(const sz of[-1,1]){
+      colliders.push({minX:x+sx*18-.3,maxX:x+sx*18+.3,minZ:z+sz*10-.3,maxZ:z+sz*10+.3});
+      colliders.push({minX:x+sx*11-.6,maxX:x+sx*11+.6,minZ:z+sz*6-.5,maxZ:z+sz*6+.5});
+    }
   }
   const collisionBuckets=new Map();
   colliders.forEach(c=>insert(collisionBuckets,c,c.minX-5,c.maxX+5,c.minZ-5,c.maxZ+5));
@@ -85,7 +124,7 @@ export function makeOpenWorld(){
     {id:'beach',name:'Pacific Beach',tag:'COASTAL HIGHWAY',description:'Palm-lined boulevards, ocean views and an open coast road.',x:-714,z:460,heading:0},
     {id:'hills',name:'Crestline Hills',tag:'MOUNTAIN ROADS',description:'Climb the pass and take the long way back to the city.',...roads.find(r=>r.id==='ridge').frame(1100)}];
   spawns[2].heading=spawns[2].angle;
-  const landmarks=[{name:'Horizon Plaza',x:6,z:80},{name:'Pacific Pier',x:-1000,z:320},{name:'Crestline Lookout',x:390,z:-1260},{name:'North Coast',x:50,z:-1950},{name:'Portside',x:700,z:1090},{name:'Airfield',x:1120,z:-160}];
+  const landmarks=[{name:'Horizon Plaza',x:120,z:440},{name:'Pacific Pier',x:-1000,z:320},{name:'Crestline Lookout',x:390,z:-1260},{name:'North Coast',x:50,z:-1950},{name:'Portside',x:700,z:1090},{name:'Airfield',x:1120,z:-160}];
   function district(x,z){return z<-1450?'NORTH COAST':z<-550?'CRESTLINE HILLS':x<-650?'PACIFIC BEACH':z>880?'PORTSIDE':x>800?'EAST GATE':'DOWNTOWN';}
   function surface(x,z){const road=nearestRoad(x,z),ground=terrainHeight(x,z);return {height:ground+(road&&road.distance<road.road.width/2?.08:0),water:ground<.1,onRoad:!!road&&road.distance<road.road.width/2,road:road?.road.name||'Off road',district:district(x,z)};}
   function resolve(x,z,heading){
@@ -103,5 +142,5 @@ export function makeOpenWorld(){
     const bx=clamp(x,BOUNDS.minX+10,BOUNDS.maxX-10),bz=clamp(z,BOUNDS.minZ+10,BOUNDS.maxZ-10);
     return {x:bx,z:bz,hit:hit||bx!==x||bz!==z};
   }
-  return {roads,buildings,colliders,parkedCars,spawns,landmarks,xs,zs,nearestRoad,surface,resolve,district,bounds:BOUNDS,terrainHeight};
+  return {roads,buildings,colliders,parkedCars,blocks,spawns,landmarks,xs,zs,nearestRoad,surface,resolve,district,bounds:BOUNDS,terrainHeight};
 }

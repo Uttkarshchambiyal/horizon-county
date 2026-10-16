@@ -13,7 +13,9 @@ under CC0: https://polyhaven.com/license
 Files were downloaded from the official dl.polyhaven.org asset service. The
 environment is prefiltered at runtime for car paint, glass and metal reflections.
 
-The world layout and H-01 Clubsport, T-04 Meridian and R-09 Summit models are
+The world layout and T-04 Meridian and R-09 Summit models are
 original code-generated designs. The interface car silhouettes are illustrations.
 
-Three.js and its HDRLoader are MIT licensed; see ../vendor/THREE-LICENSE.txt.
+The Ferrari 458 Italia by vicent091036 is CC BY 4.0; see cars/ATTRIBUTION.md.
+
+Three.js and its loaders are MIT licensed; see ../vendor/THREE-LICENSE.txt.
