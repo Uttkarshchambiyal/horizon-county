@@ -45,5 +45,13 @@ export function createRegionLayout(world,height,coast,random){
     if(items.some(p=>p.site!=='landscape'&&Math.hypot(p.x-x,p.z-z)<p.r+20))continue;
     const rock=i%4===0;add(rock?'rock':'pine',x,z,rock?3+random()*3:2.8,random()*6.28,false,'landscape',rock?28:16);
   }
+  // Denser groves frame the pass while keeping open shoulders and viewpoints.
+  for(const distance of[520,980,1550,2240,2800]){
+    const f=ridge.frame(distance);for(const side of[-1,1])for(let n=0;n<30;n++){
+      const along=(random()-.5)*110,off=65+random()*85,x=f.x+f.tx*along+f.nx*side*off,z=f.z+f.tz*along+f.nz*side*off;
+      if(height(x,z)<25||items.some(i=>i.site!=='landscape'&&Math.hypot(i.x-x,i.z-z)<i.r+25)||items.some(i=>Math.hypot(i.x-x,i.z-z)<5))continue;
+      add('pine',x,z,2.8,random()*6.28,false,'landscape',18);
+    }
+  }
   return items;
 }

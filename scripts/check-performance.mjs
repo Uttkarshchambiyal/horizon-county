@@ -19,5 +19,7 @@ for(const spawn of world.spawns){
 }
 fleet.update(1,{x:100000,z:100000});assert.equal(fleet.stats.visibleCars,0);for(const mesh of fleet.group.children)if(mesh.isInstancedMesh&&mesh.instanceMatrix.usage===THREE.DynamicDrawUsage)assert.equal(mesh.count,0,'Distant traffic must submit no instances');
 for(const i of world.regionItems){if(i.type==='rock')for(const road of world.roads)for(const p of road.samples)assert.ok(Math.hypot(p.x-i.x,p.z-i.z)>=road.width/2+i.r+27.9,'Boulders must stay beyond shoulders');if(i.site.startsWith('beach-')&&['lounger','towel'].includes(i.type))assert.ok(world.regionItems.some(p=>p.type==='umbrella'&&p.site===i.site&&Math.hypot(p.x-i.x,p.z-i.z)<4),'Beach furniture must belong to a seating group');}
+for(const type of['palm','street-tree','inland-tree']){const tree=world.colliders.find(c=>c.type===type);assert.ok(tree,type+' must have a collision shape');assert.equal(world.resolve(tree.cx,tree.cz,0).hit,true);}
+assert.ok(world.streetDetails.length>=500);
 const fountain=world.blocks.find(b=>b.use==='plaza');assert.equal(world.resolve(fountain.x+8.6,fountain.z+8.6,0).hit,false,'Rounded fountain corners must not create square ghost obstacles');
 console.log('PASS Six lightweight vehicle silhouettes, finite scenery/instances, distant fleet culling, grouped beach furniture, road shoulder clearance and circular fountain collision');

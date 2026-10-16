@@ -31,12 +31,12 @@ const car=createVehicle(new THREE.Group(),'clubsport');mountSportsCar(car,gltf);
   const s=newDriveState(flat);s.speed=10;let error=0;
   for(let i=0;i<120;i++){
     const heading=s.heading;stepDrive(s,flat,{steer:.5,throttle:true},dt);
-    error=Math.max(error,Math.abs((s.heading-heading)/dt-s.speed/2.65*Math.tan(s.steerAngle)));
+    error=Math.max(error,Math.abs((s.heading-heading)/dt-s.yawRate));
   }
-  assert.ok(error<.00001,'Yaw must follow wheelbase and actual steering angle');assert.ok(s.heading<0);
+  assert.ok(error<.00001,'Body yaw must integrate the tire response without frame jitter');assert.ok(Math.abs(s.lateralAcceleration)<=15.1,'Asphalt grip must bound lateral acceleration');assert.ok(s.heading<0);
   const reverse=newDriveState(flat);for(let i=0;i<240;i++)stepDrive(reverse,flat,{brake:true,steer:.7},dt);assert.ok(reverse.speed<0&&reverse.heading>0);
   const a=wheelAngles(-.45,2.65,1.63);assert.ok(a.right<a.left&&a.left<0);
-  console.log('PASS Bicycle steering: measured yaw matches wheel angle and wheelbase; correct reverse steering');
+  console.log('PASS Tire response: smooth integrated yaw, bounded lateral grip and correct reverse steering');
 }
 {
   const idle=engineTelemetry({speed:0},{}),loaded=engineTelemetry({speed:10},{throttle:true}),coast=engineTelemetry({speed:10},{}),before=engineTelemetry({speed:14.9},{throttle:true}),after=engineTelemetry({speed:15.1},{throttle:true});

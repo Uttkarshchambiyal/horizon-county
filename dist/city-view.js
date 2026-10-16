@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight,seeded} from './world-data.js';
-import {createFacadeLibrary} from './facade-materials.js';
+import {terrainHeight,seeded} from './world-data.js?v=clarity-5';
+import {createFacadeLibrary} from './facade-materials.js?v=clarity-5';
 
 // Street-front architecture has separate silhouettes and human-scale floors.
 // Static faces are merged by material; repeated trim and furniture is instanced.
@@ -89,7 +89,7 @@ export function buildCity(scene,world){
     if(!['house','round','civic'].includes(type)){B(w*.17,1.1,d*.16,dark,-w*.22,h+.8,-d*.15);B(w*.2,.35,d*.18,concrete,w*.24,h+.4,-d*.23);}
   }
   let streetTrees=0,props=0;
-  function tree(x,z,small=false){if(world.surface(x,z).onRoad)return;const y=terrainHeight(x,z),h=small?4.7+random()*1.8:6+random()*2;column(.17,h*.66,wood,x,y+h*.33,z);
+  function tree(x,z,small=false){if(world.surface(x,z).onRoad)return;world.addSceneryCollider?.(x,z,.18,'street-tree');const y=terrainHeight(x,z),h=small?4.7+random()*1.8:6+random()*2;column(.17,h*.66,wood,x,y+h*.33,z);
     for(let i=0;i<4;i++){const angle=i*2.4+random(),radius=h*(.19+random()*.07),spread=i===0?0:h*.18;crown(radius,h*(.22+random()*.07),leafMaterials[(i+streetTrees)%3],x+Math.sin(angle)*spread,y+h*(i===0?.88:.70+random()*.10),z+Math.cos(angle)*spread);}
     box(2.3,.15,2.3,stone,x,y+.12,z);streetTrees++;}
   function bench(x,z,r=0){box(2.1,.12,.5,wood,x,terrainHeight(x,z)+.55,z,r);box(2.1,.55,.08,wood,x+Math.sin(r)*.22,terrainHeight(x,z)+.85,z+Math.cos(r)*.22,r);for(const side of[-1,1])box(.1,.5,.4,dark,x+Math.cos(r)*side*.8,terrainHeight(x,z)+.27,z-Math.sin(r)*side*.8,r);props++;}
@@ -117,7 +117,18 @@ export function buildCity(scene,world){
   for(const [x,z] of[[22,450],[-742,430],[262,150],[-262,-30],[742,650]]){
     const y=terrainHeight(x,z);box(2.8,.15,7,teal,x,y+2.8,z);for(const side of[-1,1])box(.12,2.8,.12,dark,x,y+1.4,z+side*3);box(.08,2,6,glass,x+1.2,y+1.6,z);bench(x,z,Math.PI/2);box(.5,1.3,.6,dark,x,y+.7,z-4);props+=3;
   }
+  // Shop terraces, garden pots and bicycle stands reuse the existing batches.
+  for(const item of world.streetDetails){
+    const {x,z,y,angle:a}=item,place=(lx,lz)=>[x+lx*Math.cos(a)+lz*Math.sin(a),z-lx*Math.sin(a)+lz*Math.cos(a)];
+    const B=(w,h,d,m,lx,cy,lz,r=0)=>{const p=place(lx,lz);box(w,h,d,m,p[0],y+cy,p[1],a+r);};
+    if(item.type==='planter'){column(.66,.75,stone,x,y+.38,z);column(.58,.05,dark,x,y+.79,z);for(const [lx,lz] of[[0,0],[-.26,.12],[.25,-.1]]){const p=place(lx,lz);crown(.42,.55,green,p[0],y+1.06,p[1]);}}
+    if(item.type==='terrace'){
+      column(.08,.9,dark,x,y+.45,z);column(.78,.09,wood,x,y+.94,z);column(.035,2.8,dark,x,y+1.4,z);put(roof,teal,x,y+2.9,z,1.9,.55,1.9,a+Math.PI/4);
+      for(const side of[-1,1]){B(.55,.09,.55,wood,side*1.13,.47,0);B(.08,.8,.55,dark,side*1.34,.47,0);for(const end of[-1,1])B(.06,.45,.06,dark,side*1.13,.23,end*.2);}
+    }
+    if(item.type==='bike-rack'){for(const dx of[-.8,0,.8]){B(.055,.8,.055,dark,dx,.4,-.4);B(.055,.8,.055,dark,dx,.4,.4);B(.055,.055,.85,dark,dx,.8,0);}B(2,.1,.08,dark,0,.08,-.4);}
+  }
   for(const [geometry,byMaterial] of batches)for(const [material,matrices] of byMaterial){const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.castShadow=![glass,water,grass,asphalt].includes(material);mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);}
   for(const [material,f] of faces){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(f.p,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(f.n,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(f.uv,2));geometry.setIndex(f.i);geometry.computeBoundingSphere();const mesh=new THREE.Mesh(geometry,material);mesh.receiveShadow=true;group.add(mesh);}
-  return {group,facades,stats:{buildings:world.buildings.length,types:new Set(world.buildings.map(b=>b.type)).size,balconies,streetTrees,props,blocks:world.blocks.length,facadeVariants:facades.count}};
+  return {group,facades,leafMaterials,stats:{buildings:world.buildings.length,types:new Set(world.buildings.map(b=>b.type)).size,balconies,streetTrees,props,blocks:world.blocks.length,facadeVariants:facades.count,streetDetails:world.streetDetails.length}};
 }

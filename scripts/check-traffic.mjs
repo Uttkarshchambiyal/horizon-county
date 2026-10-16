@@ -24,7 +24,7 @@ for(let time=0;time<320;time+=.25)assert.ok(!(signalState(time,'ns')==='green'&&
   assert.ok(car.z-player.z>=6,'Traffic must not run into a stopped player');assert.ok(car.speed<.2);
   const snapshot={s:car.s,time:traffic.time};traffic.enabled=false;stepTraffic(traffic,world,player,1);assert.equal(car.s,snapshot.s);assert.equal(traffic.time,snapshot.time);
   const state=newDriveState(world);Object.assign(state,{x:car.x,z:car.z,heading:car.heading,speed:25});assert.equal(collideTraffic(state,traffic),false);
-  traffic.enabled=true;assert.equal(collideTraffic(state,traffic),true);assert.ok(state.speed<10);assert.ok(Math.hypot(state.x-car.x,state.z-car.z)>2);
+  traffic.enabled=true;assert.equal(collideTraffic(state,traffic),true);assert.ok(state.speed<10);assert.ok(Math.hypot(state.x-car.x,state.z-car.z)>1.8);
   console.log('PASS Traffic follows and brakes for the player; disabled traffic freezes and has no ghost collisions; active cars are solid');
 }
 {

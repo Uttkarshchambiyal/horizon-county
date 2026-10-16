@@ -1,5 +1,6 @@
-import {clamp,terrainHeight,seeded} from './world-data.js';
-import {FLEET_TYPES} from './fleet-data.js';
+import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=clarity-5';
+import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=clarity-5';
+import {vehicleSpec} from './vehicles.js?v=clarity-5';
 
 // A small, deterministic fleet follows continuous right-hand lanes. It runs on
 // the same fixed clock as the player, so pausing freezes cars and signals.
@@ -44,7 +45,7 @@ export function makeTraffic(world){
     Object.assign(c,route.frame(c.s));
   }
   const traffic={routes,cars,time:0,enabled:true};
-  cars.forEach(c=>{c.y=terrainHeight(c.x,c.z)+.63;});
+  cars.forEach(c=>{c.y=terrainHeight(c.x,c.z)+ROAD_SURFACE+.55;});
   return traffic;
 }
 function forwardGap(car,other){
@@ -81,22 +82,25 @@ export function stepTraffic(traffic,world,player,dt){
     car.blocked=Math.max(0,car.blocked-dt);car.braking=targets[i]<car.speed-.4;
     car.speed+=clamp(targets[i]-car.speed,-6*dt,2.2*dt);
     car.s=(car.s+car.speed*dt)%traffic.routes[car.route].length;
-    Object.assign(car,traffic.routes[car.route].frame(car.s));car.y=terrainHeight(car.x,car.z)+.63;
+    Object.assign(car,traffic.routes[car.route].frame(car.s));car.y=terrainHeight(car.x,car.z)+ROAD_SURFACE+.55;
   });
 }
 export function collideTraffic(state,traffic){
   if(!traffic.enabled)return false;
-  let hit=false;
+  const spec=vehicleSpec(state.vehicleId);let hit=false;
   for(const car of traffic.cars){
-    if(Math.hypot(state.x-car.x,state.z-car.z)>7)continue;
-    const tx=-Math.sin(state.heading),tz=-Math.cos(state.heading);
-    for(const a of[-1.3,0,1.3])for(const b of[-1.3,0,1.3]){
-      const dx=state.x+tx*a-car.x-car.tx*b,dz=state.z+tz*a-car.z-car.tz*b,d=Math.hypot(dx,dz),radius=2.18;
-      if(d>=radius)continue;
-      const nx=d>.001?dx/d:-car.tz,nz=d>.001?dz/d:car.tx;
-      state.x+=nx*(radius-d+.005);state.z+=nz*(radius-d+.005);hit=true;car.blocked=1;car.speed=0;car.braking=true;
+    if(Math.hypot(state.x-car.x,state.z-car.z)>7||Math.abs((state.y??car.y)-(car.y??state.y))>2.3)continue;
+    const af={x:-Math.sin(state.heading),z:-Math.cos(state.heading)},ar={x:Math.cos(state.heading),z:-Math.sin(state.heading)},bf={x:car.tx??-Math.sin(car.heading),z:car.tz??-Math.cos(car.heading)},br={x:-bf.z,z:bf.x},[length,width]=FLEET_FOOTPRINTS[car.type]||FLEET_FOOTPRINTS.sedan;
+    const dx=state.x-car.x,dz=state.z-car.z;let overlap=Infinity,normal=null;
+    for(const axis of[af,ar,bf,br]){
+      const ra=(spec.length/2+.04)*Math.abs(af.x*axis.x+af.z*axis.z)+(spec.width/2+.04)*Math.abs(ar.x*axis.x+ar.z*axis.z),rb=(length/2+.04)*Math.abs(bf.x*axis.x+bf.z*axis.z)+(width/2+.04)*Math.abs(br.x*axis.x+br.z*axis.z),projection=dx*axis.x+dz*axis.z,depth=ra+rb-Math.abs(projection);
+      if(depth<=0){normal=null;break;}if(depth<overlap){overlap=depth;const sign=projection<0?-1:1;normal={x:axis.x*sign,z:axis.z*sign};}
     }
+    if(!normal)continue;
+    state.x+=normal.x*(overlap+.005);state.z+=normal.z*(overlap+.005);hit=true;
+    const direction=Math.sign(state.speed),heading=state.motionHeading??state.heading,vx=-Math.sin(heading)*state.speed,vz=-Math.cos(heading)*state.speed,inward=Math.min(0,vx*normal.x+vz*normal.z),sx=vx-normal.x*inward,sz=vz-normal.z*inward;
+    state.speed=overlap>1.2?0:Math.hypot(sx,sz)*direction;if(Math.abs(state.speed)>.1)state.motionHeading=Math.atan2(-sx*direction,-sz*direction);
+    state.yawRate=(state.yawRate||0)*.8;car.blocked=1;car.speed=0;car.braking=true;state.hitCooldown=.2;
   }
-  if(hit){state.speed*=.3;state.hitCooldown=.2;}
   return hit;
 }

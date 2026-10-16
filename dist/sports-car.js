@@ -35,6 +35,15 @@ export function mountSportsCar(vehicle,gltf){
   for(const name of ['rim_fl','rim_fr','rim_rl','rim_rr'])model.getObjectByName(name).material=alloy;
   model.traverse(o=>{if(o.isMesh&&o.material?.name==='Tires')o.material=rubber;});
   root.add(model);
+  // Close the open roof area with a lightweight painted coupe roof and glazing.
+  const roofPositions=[],roofIndices=[],rows=10,columns=12;
+  for(let row=0;row<=rows;row++){const t=row/rows,z=-.32+t*1.04,w=.67-t*.035;for(let col=0;col<=columns;col++){const u=col/columns*2-1;roofPositions.push(u*w,.675+Math.sin(t*Math.PI)*.035-.025*Math.abs(u)**4,z);}}
+  for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){const a=row*(columns+1)+col,b=a+columns+1;roofIndices.push(a,b,a+1,a+1,b,b+1);}
+  const roofGeometry=new THREE.BufferGeometry();roofGeometry.setAttribute('position',new THREE.Float32BufferAttribute(roofPositions,3));roofGeometry.setIndex(roofIndices);roofGeometry.computeVertexNormals();
+  const roof=new THREE.Mesh(roofGeometry,vehicle.bodyMat);roof.name='Coupe roof';roof.castShadow=true;roof.receiveShadow=true;root.add(roof);root.updateMatrixWorld(true);bodyPivot.attach(roof);
+  const rearGeometry=new THREE.BufferGeometry();rearGeometry.setAttribute('position',new THREE.Float32BufferAttribute([-.635,.65,.72,.635,.65,.72,-.71,.42,1.3,.71,.42,1.3],3));rearGeometry.setIndex([0,2,1,1,2,3]);rearGeometry.computeVertexNormals();
+  const rearGlass=new THREE.Mesh(rearGeometry,glazing);rearGlass.name='Coupe rear glazing';root.add(rearGlass);root.updateMatrixWorld(true);bodyPivot.attach(rearGlass);
+
   vehicle.flames.length=0;
   vehicle.assetReady=true;vehicle.assetName='Ferrari 458 Italia';model.updateMatrixWorld(true);
   return vehicle;

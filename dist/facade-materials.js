@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import {seeded} from './world-data.js';
+import {seeded} from './world-data.js?v=clarity-5';
 
 // Four floors and bays per atlas break the one-identical-window repetition.
 // Photos supply masonry grain; window masks keep glass smooth and reflective.
@@ -7,12 +7,13 @@ export function createFacadeLibrary(){
   const records=[],materials=[],families=['stucco','brick','stucco','glass','glass','stucco','deco','house'];let photos={};
   const colours=['#c4b49e','#a18169','#b3c1bc','#577586','#405a70','#b58e76','#b5ad98','#c4b490'];
   for(let family=0;family<8;family++)for(let variant=0;variant<3;variant++){
-    const canvases=Array.from({length:4},()=>{const c=document.createElement('canvas');c.width=c.height=512;return c;}),textures=canvases.map(c=>{const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;return t;});textures[0].colorSpace=THREE.SRGBColorSpace;
+    const canvases=Array.from({length:4},(_,index)=>{const c=document.createElement('canvas');c.width=c.height=index===0?1024:512;return c;}),textures=canvases.map(c=>{const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;return t;});textures[0].colorSpace=THREE.SRGBColorSpace;
     const material=new THREE.MeshStandardMaterial({map:textures[0],roughnessMap:textures[1],bumpMap:textures[2],bumpScale:.035,roughness:.95,metalness:families[family]==='glass'?.32:.05,emissiveMap:textures[3],emissive:0xf6d4a0,emissiveIntensity:0});material.userData.facadeCell=[13.2,14];
     records.push({family,variant,canvases,textures,material});materials.push(material);
   }
   function paint(record){
     const {family,variant,canvases,textures}=record,kind=families[family],random=seeded(702+family*29+variant*107),[ctx,rough,bump,light]=canvases.map(c=>c.getContext('2d'));
+    const scale=canvases[0].width/512;ctx.setTransform(scale,0,0,scale,0,0);
     ctx.fillStyle=colours[family];ctx.fillRect(0,0,512,512);rough.fillStyle='#eeeeee';rough.fillRect(0,0,512,512);bump.fillStyle='#888888';bump.fillRect(0,0,512,512);light.fillStyle='#000';light.fillRect(0,0,512,512);
     const photo=photos[kind==='brick'?'brick':kind==='deco'?'concrete':'plaster'];
     if(photo&&kind!=='glass'){
@@ -39,5 +40,5 @@ export function createFacadeLibrary(){
     textures.forEach(t=>t.needsUpdate=true);
   }
   records.forEach(paint);
-  return {materials,get(family,variant){return materials[family*3+(variant%3)];},applyPhotos(images){photos=images;records.forEach(paint);},setNight(on){records.forEach(r=>r.material.emissiveIntensity=on?.36:0);},count:materials.length};
+  return {materials,setDetail(mode,width=Infinity){const size=mode==='quality'&&width>=600?1024:512;if(records[0].canvases[0].width===size)return;records.forEach(r=>{r.canvases[0].width=r.canvases[0].height=size;paint(r);});},get(family,variant){return materials[family*3+(variant%3)];},applyPhotos(images){photos=images;records.forEach(paint);},setNight(on){records.forEach(r=>r.material.emissiveIntensity=on?.36:0);},count:materials.length};
 }

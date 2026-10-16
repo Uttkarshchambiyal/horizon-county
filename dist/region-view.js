@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight} from './world-data.js';
+import {terrainHeight} from './world-data.js?v=clarity-5';
 export function buildRegions(scene,world){
   const group=new THREE.Group();group.name='Pacific shore and Crestline destinations';scene.add(group);
   const geometries={box:new THREE.BoxGeometry(1,1,1),pole:new THREE.CylinderGeometry(1,1,1,10),cone:new THREE.ConeGeometry(1,1,10),umbrella:new THREE.ConeGeometry(1,1,12),rock:new THREE.IcosahedronGeometry(1,1),board:new THREE.CapsuleGeometry(.25,2,4,8)},batches=new Map(),o=new THREE.Object3D();

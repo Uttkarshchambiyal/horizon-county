@@ -24,3 +24,5 @@ The geometry was also simplified offline using meshoptimizer v1.0 with normals a
 
 The expanded file retains attribution in its glTF asset extras. Other vehicles
 and the world layout are original code-generated designs.
+
+The current game also adds a lightweight painted coupe roof and rear glazing to close the open roof area. These are game-created additions and are not geometry supplied or endorsed by the original model creator. The game renders 100,441 triangles including these additions; the optimized GLB itself remains 100,199 triangles.
