@@ -77,37 +77,38 @@ export function buildOpenWorld(scene,world){
       addBox(1.35,.025,3.2,white,x+i*2.1,terrainHeight(x,z)+.14,z+side*18);
       addBox(3.2,.025,1.35,white,x+side*20,terrainHeight(x,z)+.14,z+i*2.1);
     }
-    for(const side of[-1,1]){
-      addBox(.18,5,.18,dark,x+side*20,terrainHeight(x,z)+2.5,z+side*21);
-      addBox(.48,1.35,.36,dark,x+side*20,terrainHeight(x,z)+4.9,z+side*21);
-    }
   }
   function facade(tone,glass=false){
-    const c=document.createElement('canvas');c.width=128;c.height=256;const ctx=c.getContext('2d');ctx.fillStyle=tone;ctx.fillRect(0,0,128,256);
-    for(let y=3;y<256;y+=16)for(let x=3;x<128;x+=16){ctx.fillStyle=glass?(random()>.5?'#829ba7':'#526b7c'):(random()>.8?'#a0a5a1':'#344850');ctx.fillRect(x,y,10,11);ctx.fillStyle=glass?'#9bafae':'#d0ccc0';ctx.fillRect(x,y+11,11,1);}
-    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
+    const c=document.createElement('canvas');c.width=256;c.height=512;const ctx=c.getContext('2d');ctx.fillStyle=tone;ctx.fillRect(0,0,256,512);
+    const stepX=glass?21:43,stepY=glass?14:64;
+    for(let y=3;y<512;y+=stepY)for(let x=3;x<256;x+=stepX){
+      const value=random();ctx.fillStyle=glass?(value>.75?'#91a1a5':value>.35?'#607b89':'#3c586b'):(value>.7?'#aab9ae':'#344951');ctx.fillRect(x,y,stepX-4,glass?stepY-2:36);
+      ctx.fillStyle=glass?'#a9b5b4':'#d7d0be';ctx.fillRect(x-1,y+(glass?stepY-2:36),stepX-2,2);
+      ctx.fillStyle='#b8b9aa';if(value>.8)ctx.fillRect(x+1,y+1,stepX-6,glass?4:10);
+      if(!glass){ctx.fillStyle='#696d66';ctx.fillRect(x+stepX/2-2,y,2,36);}
+    }
+    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t;
   }
-  const facades=['#a9aaa4','#c7bcaa','#9a9c95','#b6ada0','#c2b3a4'].map((c,i)=>new THREE.MeshStandardMaterial({map:facade(c,i<2),color:i<2?0xabbac1:0xd8d2c4,roughness:i<2?.38:.8,metalness:i<2?.4:0}));
+  const facades=['#a9aaa4','#a9b8bc','#b5aa95','#b6ada0','#baaa9b'].map((c,i)=>new THREE.MeshStandardMaterial({map:facade(c,i<2),color:i<2?0xc0c9ca:0xe2dbcd,roughness:i<2?.32:.84,metalness:i<2?.28:0}));
   const roofMat=material(0x626c6d),glassMat=material(0x5a7984,.25,.6);
   for(const b of world.buildings){
     addBox(b.w+9,.06,b.d+9,concrete,b.x,b.y+.025,b.z);
-    addBox(b.w,b.h,b.d,facades[b.style],b.x,b.y+b.h/2,b.z);
+    addBox(b.w,b.h,b.d,facades[b.type==='tower'?b.style%2:2+b.style%3],b.x,b.y+b.h/2,b.z);
     addBox(b.w+1,.6,b.d+1,concrete,b.x,b.y+.15,b.z);
     addBox(b.w+.3,.6,b.d+.3,roofMat,b.x,b.y+b.h+.2,b.z);
     addBox(b.w*.18,1.6,b.d*.2,dark,b.x+3,b.y+b.h+1.2,b.z);
+    // Street-level glazing, canopy, doors and rooftop plant give buildings a
+    // readable human scale while repeated pieces stay in material batches.
+    addBox(b.w*.88,2.8,.18,glassMat,b.x,b.y+1.7,b.z+b.d/2+.11);
+    addBox(b.w*.94,.16,1.5,roofMat,b.x,b.y+3.25,b.z+b.d/2+.55);
+    for(const side of[-1,1])addBox(.13,3,.28,concrete,b.x+side*b.w*.31,b.y+1.7,b.z+b.d/2+.2);
+    addBox(1.5,2.5,.12,dark,b.x,b.y+1.4,b.z+b.d/2+.26);
+    addBox(b.w*.18,1.2,b.d*.12,roofMat,b.x-b.w*.26,b.y+b.h+1,b.z-b.d*.2);
     if(b.type==='tower'){
       addBox(b.w+1.8,3,b.d+1.8,glassMat,b.x,b.y+1.7,b.z);
       for(const side of[-1,1])addBox(.55,b.h+.8,b.d+.4,concrete,b.x+side*(b.w/2-.4),b.y+b.h/2,b.z);
       if(b.h>85){addBox(.5,14,.5,dark,b.x,b.y+b.h+7,b.z);addBox(3,1,3,white,b.x,b.y+b.h+1,b.z);}
     }
-  }
-  const parkedPaint=[0xb7b4a5,0x6c8a95,0x9a503f,0x303b46,0x777b64].map(c=>material(c,.35,.45));
-  for(const p of world.parkedCars){
-    addBox(1.85,.66,4.3,parkedPaint[p.color],p.x,p.y+.61,p.z);
-    addBox(1.55,.55,2.05,glassMat,p.x,p.y+1.17,p.z+.1);
-    addBox(1.6,.06,1.1,parkedPaint[p.color],p.x,p.y+1.47,p.z+.14);
-    for(const side of[-1,1])for(const z of[-1.35,1.35])addBox(.28,.7,.7,dark,p.x+side*.92,p.y+.4,p.z+z);
-    for(const side of[-1,1])addBox(.5,.08,.04,white,p.x+side*.58,p.y+.67,p.z-2.16);
   }
   // A beach boardwalk, long pier and a small marina give the coast a destination.
   addBox(8,.35,1150,wood,-1040,1.3,280);
@@ -141,5 +142,5 @@ export function buildOpenWorld(scene,world){
   // Atmosphere uses a large gradient dome; distant terrain fades into the sky.
   const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,32,20),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{top:{value:new THREE.Color(0x6da2c6)},bottom:{value:new THREE.Color(0xe1d9be)}},vertexShader:'varying float h;void main(){h=normalize(position).y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying float h;uniform vec3 top;uniform vec3 bottom;void main(){gl_FragColor=vec4(mix(bottom,top,pow(max(0.,h),.65)),1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));group.add(sky);
   const sunDisk=new THREE.Mesh(new THREE.SphereGeometry(65,24,16),new THREE.MeshBasicMaterial({color:0xffe8b1}));sunDisk.position.set(-1800,1600,-3500);group.add(sunDisk);
-  return {group,setSky(top,bottom){sky.material.uniforms.top.value.set(top);sky.material.uniforms.bottom.value.set(bottom);waterMaterial.uniforms.sky.value.set(bottom);},update(time){waterMaterial.uniforms.time.value=time;},stats:{buildings:world.buildings.length,roadKm:world.roads.reduce((s,r)=>s+r.length,0)/1000,palms:palms.length}};
+  return {group,surfaces:{asphalt,terrain:terrain.material,sizeX,sizeZ},setSky(top,bottom){sky.material.uniforms.top.value.set(top);sky.material.uniforms.bottom.value.set(bottom);waterMaterial.uniforms.sky.value.set(bottom);},update(time){waterMaterial.uniforms.time.value=time;},stats:{buildings:world.buildings.length,roadKm:world.roads.reduce((s,r)=>s+r.length,0)/1000,palms:palms.length}};
 }

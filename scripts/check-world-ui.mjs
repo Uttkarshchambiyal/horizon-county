@@ -3,7 +3,9 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import * as THREE from '../dist/vendor/three.module.min.js';
-import {createCar} from '../dist/car.js';
+import {VEHICLES,vehicleSpec,createVehicle} from '../dist/vehicles.js';
+import {makeTraffic,stepTraffic,collideTraffic} from '../dist/traffic.js';
+import {buildTrafficView} from '../dist/traffic-view.js';
 import {createDrivingControls} from '../dist/controls.js';
 import {makeOpenWorld,terrainHeight,coast,clamp} from '../dist/world-data.js';
 import {buildOpenWorld} from '../dist/world-view.js';
@@ -27,8 +29,8 @@ globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.devicePixelRat
 let callback;globalThis.requestAnimationFrame=fn=>callback=fn;
 class Renderer{constructor(){this.shadowMap={};this.info={render:{}};}setPixelRatio(){}setSize(){}render(){}}
 const source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-new Function('THREE','createCar','addReflections','createDrivingControls','makeOpenWorld','terrainHeight','coast','clamp','buildOpenWorld','newDriveState','stepDrive','recoverCar',source)(
-  {...THREE,WebGLRenderer:Renderer},createCar,()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar);
+const dependencies={THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadWorldAssets:async()=>({loaded:3,total:3})};
+new Function(...Object.keys(dependencies),source)(...Object.values(dependencies));
 const key=(code,key,up=false)=>{for(const fn of listeners.get(up?'keyup':'keydown')||[])fn({code,key,preventDefault(){}});};
 let timestamp=1000;function frames(n){for(let i=0;i<n;i++){timestamp+=1000/60;callback(timestamp);}}
 assert.equal(window.horizon.getState().mode,'menu');
@@ -46,4 +48,13 @@ const travel=document.querySelectorAll('[data-travel]')[2];travel.listeners.clic
 ids.get('help-button').listeners.click();assert.equal(window.horizon.getState().mode,'help');ids.get('close-help-button').listeners.click();assert.equal(window.horizon.getState().mode,'playing');
 key('Escape','Escape');assert.equal(window.horizon.getState().mode,'paused');ids.get('resume-button').listeners.click();assert.equal(window.horizon.getState().mode,'playing');
 ids.get('lighting-button').listeners.click();ids.get('lighting-button').listeners.click();frames(3);
+// Garage and settings pause the real simulation and keep manual control.
+const before=window.horizon.getState();key('KeyG','g');assert.equal(window.horizon.getState().mode,'garage');frames(30);assert.equal(window.horizon.getState().trafficTime,before.trafficTime);
+document.querySelectorAll('[data-vehicle]')[2].listeners.click();assert.equal(window.horizon.getState().vehicle,'trail');assert.equal(window.horizon.getState().speed,0);
+ids.get('use-car').listeners.click();assert.equal(window.horizon.getState().mode,'playing');
+key('KeyO','o');assert.equal(window.horizon.getState().mode,'settings');
+ids.get('quality-toggle').listeners.click();assert.equal(window.horizon.getState().quality,'quality');ids.get('quality-toggle').listeners.click();assert.equal(window.horizon.getState().quality,'performance');
+ids.get('traffic-toggle').listeners.click();assert.equal(window.horizon.getState().traffic,false);ids.get('close-settings-button').listeners.click();const stopped=window.horizon.getState();frames(60);assert.equal(window.horizon.getState().speed,0);assert.equal(window.horizon.getState().trafficTime,stopped.trafficTime);
+key('KeyO','o');ids.get('traffic-toggle').listeners.click();key('Escape','Escape');frames(30);assert.ok(window.horizon.getState().trafficTime>stopped.trafficTime);
+console.log('PASS Garage: car switching stops the car; graphics/traffic settings; simulation freezes in overlays; no idle movement');
 console.log('PASS Real entrypoint: canvas focus, simultaneous W+A/W+D, steering HUD, map, waypoint, district travel, help, pause/resume and lighting');
