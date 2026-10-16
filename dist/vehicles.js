@@ -8,9 +8,11 @@ export const vehicleSpec=id=>VEHICLES.find(v=>v.id===id)||VEHICLES[0];
 export function createVehicle(parent,id='clubsport',{detail=true}={}){
   const spec=vehicleSpec(id),suv=id==='trail',sedan=id==='touring',root=new THREE.Group();root.name=spec.name;
   const wheels=[],steerWheels=[],flames=[],wheelCenters=[];
-  const paint=new THREE.MeshPhysicalMaterial({color:spec.color,metalness:.72,roughness:.24,clearcoat:1,clearcoatRoughness:.12,envMapIntensity:1.05});
+  const paint=new THREE.MeshPhysicalMaterial({color:spec.color,metalness:.28,roughness:.26,clearcoat:1,clearcoatRoughness:.07,envMapIntensity:1.05});
   const trim=new THREE.MeshStandardMaterial({color:0x172027,metalness:.48,roughness:.42});
-  const rubber=new THREE.MeshStandardMaterial({color:0x141719,roughness:.9});
+  const rubber=new THREE.MeshStandardMaterial({color:0x1b1e20,roughness:.94});
+  if(detail&&id!=='clubsport'){const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#999';ctx.fillRect(0,0,128,128);ctx.strokeStyle='#333';ctx.lineWidth=suv?4:2;for(let y=0;y<128;y+=suv?14:9){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(64,y+7);ctx.lineTo(128,y);ctx.stroke();}const map=new THREE.CanvasTexture(c);map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(12,1);rubber.bumpMap=map;rubber.bumpScale=suv?.012:.006;}
+
   const alloy=new THREE.MeshStandardMaterial({color:0xb4bdc3,metalness:.98,roughness:.23});
   const glass=new THREE.MeshPhysicalMaterial({color:0x152c38,metalness:.24,roughness:.09,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.3});
   const tail=new THREE.MeshStandardMaterial({color:0xf53338,emissive:0xf81a20,emissiveIntensity:1.2});

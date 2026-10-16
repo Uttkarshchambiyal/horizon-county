@@ -26,6 +26,7 @@ export async function loadWorldAssets(scene,renderer,view){
   };
   const regions=async()=>{
     const [sand,rock]=await Promise.all([texture('materials/sand.jpg',[1,1],true),texture('materials/rock.jpg',[1,1],true)]);
+    view.regions.groundMaterial.map=sand;view.regions.groundMaterial.needsUpdate=true;
     view.regions.rockMaterial.map=rock;view.regions.rockMaterial.needsUpdate=true;
     // Blend by world position so the whole shoreline receives sand rather
     // than stretching a city-ground photograph across beach and mountains.

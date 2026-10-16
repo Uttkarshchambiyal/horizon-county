@@ -50,7 +50,7 @@ for(const road of w.roads.filter(r=>['coast','ridge','avenue0','street320'].incl
 // Exercise scene generation without a GPU, and check all road faces point up.
 const ctx=new Proxy({createLinearGradient:()=>({addColorStop(){}}),createImageData:(x,y)=>({data:new Uint8ClampedArray(x*y*4)})},{get:(o,k)=>k in o?o[k]:(()=>{})});
 globalThis.document={createElement:()=>({width:0,height:0,getContext:()=>ctx})};
-const scene=new THREE.Scene(),view=buildOpenWorld(scene,w);let roadMeshes=0;
-scene.traverse(m=>{if(m.material?.color?.getHex()===0x55585a){roadMeshes++;const normals=m.geometry.attributes.normal;for(let i=0;i<normals.count;i++)assert.ok(normals.getY(i)>=0,'Road face points below ground: '+m.name);}});
-assert.equal(roadMeshes,w.roads.length);assert.equal(view.stats.buildings,w.buildings.length);view.setSky(0x86abcd,0xded5bb);view.update(2);
+const scene=new THREE.Scene(),view=buildOpenWorld(scene,w);let roadMeshes=0;const asphaltVertices=new Set();
+scene.traverse(m=>{if(m.material?.color?.getHex()===0x55585a){roadMeshes++;const p=m.geometry.attributes.position;for(let i=0;i<p.count;i++)asphaltVertices.add(Math.round(p.getX(i)*1000)+','+Math.round(p.getZ(i)*1000));const normals=m.geometry.attributes.normal;for(let i=0;i<normals.count;i++)assert.ok(normals.getY(i)>=0,'Road face points below ground: '+m.name);}});
+assert.ok(roadMeshes>0);for(const road of w.roads)for(const f of road.samples)for(const side of[-1,1])assert.ok(asphaltVertices.has(Math.round(Math.fround(f.x+f.nx*road.width/2*side)*1000)+','+Math.round(Math.fround(f.z+f.nz*road.width/2*side)*1000)),'Rendered asphalt must retain every road sample: '+road.id);assert.equal(view.stats.buildings,w.buildings.length);view.setSky(0x86abcd,0xded5bb);view.update(2);
 console.log('PASS Complete terrain, roads, buildings, vegetation and water scene generation');

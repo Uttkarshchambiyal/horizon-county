@@ -1,4 +1,5 @@
 import {clamp,terrainHeight,seeded} from './world-data.js';
+import {FLEET_TYPES} from './fleet-data.js';
 
 // A small, deterministic fleet follows continuous right-hand lanes. It runs on
 // the same fixed clock as the player, so pausing freezes cars and signals.
@@ -34,7 +35,7 @@ export function makeTraffic(world){
   const coast=world.roads.find(r=>r.id==='coast');
   for(const direction of[1,-1])routes.push({length:coast.length,city:false,frame(distance){const f=coast.frame(direction*distance),tx=f.tx*direction,tz=f.tz*direction;return {x:f.x-tz*4,z:f.z+tx*4,tx,tz,heading:Math.atan2(-tx,-tz)};}});
   const random=seeded(704),cars=[];
-  routes.forEach((route,ri)=>{const count=route.city?2:3;for(let i=0;i<count;i++){const s=route.length*(i+.17+ri*.11)/count;cars.push({id:cars.length,route:ri,s,speed:0,desiredSpeed:route.city?12+random()*3:20+random()*4,type:['touring','trail','clubsport'][cars.length%3],paint:[0xe2e1d7,0x475d6e,0x8d4540,0x92948c,0x29333d,0x8b978b][cars.length%6],blocked:0,braking:false,...route.frame(s)});}});
+  routes.forEach((route,ri)=>{const count=route.city?2:3;for(let i=0;i<count;i++){const s=route.length*(i+.17+ri*.11)/count;cars.push({id:cars.length,route:ri,s,speed:0,desiredSpeed:route.city?12+random()*3:20+random()*4,type:FLEET_TYPES[cars.length%FLEET_TYPES.length],paint:[0xe2e1d7,0x475d6e,0x8d4540,0x92948c,0x29333d,0x8b978b][cars.length%6],blocked:0,braking:false,...route.frame(s)});}});
   // Two cars are visible from the downtown start, in opposite lanes. All other
   // cars remain distributed over the city and the long coastal loop.
   for(const [id,x,z] of[[0,3.4,410],[6,-3.4,350]]){

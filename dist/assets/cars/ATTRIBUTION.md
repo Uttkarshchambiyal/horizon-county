@@ -20,5 +20,7 @@ needed at runtime. The game adjusts body paint, glazing, lamps, placement and
 wheel pivots, and adds arcade driving behavior. These adaptations are not an
 endorsement by the model creator or vehicle manufacturer.
 
+The geometry was also simplified offline using meshoptimizer v1.0 with normals as attributes, reducing it from 358,788 to 100,199 triangles. Nodes, materials, UVs and independent wheel assemblies are retained.
+
 The expanded file retains attribution in its glTF asset extras. Other vehicles
 and the world layout are original code-generated designs.

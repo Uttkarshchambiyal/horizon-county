@@ -109,18 +109,22 @@ export function makeOpenWorld(){
     if(road&&road.distance<road.road.width/2+5)continue;
     if(buildings.some(b=>Math.abs(b.x-x)<b.w/2+1.5&&Math.abs(b.z-z)<b.d/2+3))continue;
     parkedCars.push({x,z,y:terrainHeight(x,z),color:Math.floor(random()*5)});
-    colliders.push({minX:x-1.1,maxX:x+1.1,minZ:z-2.4,maxZ:z+2.4});
+    colliders.push({minX:x-1.1,maxX:x+1.1,minZ:z-2.7,maxZ:z+2.7});
   }
   for(const block of blocks){
     const {x,z,use}=block;
-    if(use==='park'||use==='plaza')colliders.push({minX:x-9,maxX:x+9,minZ:z-9,maxZ:z+9});
+    if(use==='park'||use==='plaza')colliders.push({minX:x-9,maxX:x+9,minZ:z-9,maxZ:z+9,cx:x,cz:z,radius:9});
     if(use==='service')for(const sx of[-1,1])for(const sz of[-1,1]){
       colliders.push({minX:x+sx*18-.3,maxX:x+sx*18+.3,minZ:z+sz*10-.3,maxZ:z+sz*10+.3});
       colliders.push({minX:x+sx*11-.6,maxX:x+sx*11+.6,minZ:z+sz*6-.5,maxZ:z+sz*6+.5});
     }
   }
   const regionItems=createRegionLayout({roads,buildings,nearestRoad},terrainHeight,coast,seeded(8031));
-  for(const item of regionItems)if(item.solid||item.type==='rock'||item.type==='pine'){const r=item.type==='pine'?.27:item.r;colliders.push({minX:item.x-r,maxX:item.x+r,minZ:item.z-r,maxZ:item.z+r});}
+  for(const item of regionItems)if(item.solid||item.type==='rock'||item.type==='pine'){
+    const {x:cx,z:cz,type,angle}=item,footprints={lookout:[6,4.5],cabin:[3.5,3.6],kiosk:[3.5,3.6],lifeguard:[2.5,2]},footprint=footprints[type];
+    if(footprint){const [halfX,halfZ]=footprint,dx=Math.abs(Math.cos(angle))*halfX+Math.abs(Math.sin(angle))*halfZ,dz=Math.abs(Math.sin(angle))*halfX+Math.abs(Math.cos(angle))*halfZ;colliders.push({cx,cz,angle,halfX,halfZ,minX:cx-dx,maxX:cx+dx,minZ:cz-dz,maxZ:cz+dz,type});}
+    else {const radius=type==='pine'?.23:type==='tent'?3.35:item.r*.88;colliders.push({cx,cz,radius,minX:cx-radius,maxX:cx+radius,minZ:cz-radius,maxZ:cz+radius,type});}
+  }
   const collisionBuckets=new Map();
   colliders.forEach(c=>insert(collisionBuckets,c,c.minX-5,c.maxX+5,c.minZ-5,c.maxZ+5));
   const spawns=[{id:'downtown',name:'Downtown',tag:'CITY STREETS',description:'Wide avenues, glass towers and downtown intersections.',x:6,z:485,heading:0},
@@ -131,6 +135,7 @@ export function makeOpenWorld(){
   Object.assign(spawns[1],{x:beachFrame.x+beachFrame.nx*4,z:beachFrame.z+beachFrame.nz*4,heading:beachFrame.angle});
   spawns[2].heading=spawns[2].angle;
   const landmarks=[{name:'Horizon Plaza',x:120,z:440},{name:'Pacific Pier',x:-1000,z:320},{name:'Crestline Lookout',x:390,z:-1260},{name:'North Coast',x:50,z:-1950},{name:'Portside',x:700,z:1090},{name:'Airfield',x:1120,z:-160}];
+  const lookout=regionItems.filter(i=>i.type==='lookout').sort((a,b)=>Math.hypot(a.x-390,a.z+1260)-Math.hypot(b.x-390,b.z+1260))[0];if(lookout)Object.assign(landmarks[2],{x:lookout.x,z:lookout.z});
   function district(x,z){return z<-1450?'NORTH COAST':z<-550?'CRESTLINE HILLS':x<-650?'PACIFIC BEACH':z>880?'PORTSIDE':x>800?'EAST GATE':'DOWNTOWN';}
   function surface(x,z){const road=nearestRoad(x,z),ground=terrainHeight(x,z);return {height:ground+(road&&road.distance<road.road.width/2?.08:0),water:ground<.1,onRoad:!!road&&road.distance<road.road.width/2,road:road?.road.name||'Off road',district:district(x,z)};}
   function resolve(x,z,heading){
@@ -138,7 +143,10 @@ export function makeOpenWorld(){
     for(let pass=0;pass<3;pass++)for(const along of[-1.2,0,1.2]){
       const px=x-Math.sin(heading)*along,pz=z-Math.cos(heading)*along;
       for(const c of collisionBuckets.get(key(px,pz))||[]){
-        const qx=clamp(px,c.minX,c.maxX),qz=clamp(pz,c.minZ,c.maxZ),dx=px-qx,dz=pz-qz,dist=Math.hypot(dx,dz),radius=1.12;
+        const radius=1.12;
+        if(c.radius){const dx=px-c.cx,dz=pz-c.cz,dist=Math.hypot(dx,dz),overlap=c.radius+radius-dist;if(overlap>0){hit=true;x+=(dist?dx/dist:1)*overlap;z+=(dist?dz/dist:0)*overlap;}continue;}
+        if(c.halfX){const co=Math.cos(c.angle),si=Math.sin(c.angle),lx=(px-c.cx)*co-(pz-c.cz)*si,lz=(px-c.cx)*si+(pz-c.cz)*co,qx=clamp(lx,-c.halfX,c.halfX),qz=clamp(lz,-c.halfZ,c.halfZ),dx=lx-qx,dz=lz-qz,dist=Math.hypot(dx,dz);if(dist<radius){hit=true;let ox,oz;if(dist>.0001){ox=dx/dist*(radius-dist);oz=dz/dist*(radius-dist);}else if(c.halfX-Math.abs(lx)<c.halfZ-Math.abs(lz)){ox=(lx<0?-1:1)*(c.halfX-Math.abs(lx)+radius);oz=0;}else{ox=0;oz=(lz<0?-1:1)*(c.halfZ-Math.abs(lz)+radius);}x+=ox*co+oz*si;z+=-ox*si+oz*co;}continue;}
+        const qx=clamp(px,c.minX,c.maxX),qz=clamp(pz,c.minZ,c.maxZ),dx=px-qx,dz=pz-qz,dist=Math.hypot(dx,dz);
         if(dist>=radius)continue;
         hit=true;
         if(dist>.0001){x+=dx/dist*(radius-dist);z+=dz/dist*(radius-dist);}

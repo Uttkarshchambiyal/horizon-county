@@ -47,7 +47,7 @@ const audio=createEngineAudio();
 function initAudio(){audio.start();}
 function clearInput(){audio.silence();controls.clear();Object.keys(touch).forEach(k=>touch[k]=false);document.querySelectorAll('[data-control]').forEach(b=>b.classList.remove('pressed'));}
 function focusGame(){canvas.focus({preventScroll:true});}
-function sync(){previous={...state};accumulator=0;positionCar(0,1);updateCamera(1,true);updateHUD();renderer.render(scene,camera);}
+function sync(){previous={...state};accumulator=0;view.visibility.update(state.x,state.z,preference.quality,true);trafficView.update(1,state);positionCar(0,1);updateCamera(1,true);updateHUD();renderer.render(scene,camera);}
 function toast(title,sub='',duration=2.5){$('toast').textContent=title;if(sub){const small=document.createElement('small');small.textContent=sub;$('toast').appendChild(small);}$('toast').classList.add('visible');toastTime=duration;}
 function selectSpawn(index){selected=index;state=newDriveState(world,world.spawns[index],currentCar.spec.id);clearInput();sync();document.querySelectorAll('[data-spawn]').forEach(b=>{const on=+b.dataset.spawn===index;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});}
 function startDrive(){initAudio();clearInput();mode='playing';state=newDriveState(world,world.spawns[selected],currentCar.spec.id);document.body.classList.add('playing');$('menu').classList.add('hidden');$('drive-hud').classList.remove('hidden');$('pause-button').classList.remove('hidden');for(const id of['pause-overlay','map-overlay','help-overlay','garage-overlay','settings-overlay'])$(id).classList.add('hidden');cameraMode=0;sync();focusGame();toast('HORIZON COUNTY','WASD TO DRIVE / M TO EXPLORE THE MAP');}
@@ -81,8 +81,8 @@ function applyQuality(){
   const q=preference.quality;
   if(q!=='auto')resolutionScale=q==='quality'?1.75:1;
   renderer.setPixelRatio(Math.min(devicePixelRatio,resolutionScale));
-  renderer.shadowMap.enabled=q!=='performance';
-  $('quality-value').textContent=q.toUpperCase();$('quality-description').textContent=q==='auto'?'Resolution adapts to frame rate.':q==='quality'?'Higher resolution and soft sun shadows.':'Lower resolution. Sun shadows disabled.';
+  renderer.shadowMap.enabled=q!=='performance';const shadowSize=q==='quality'?2048:1024;if(sun.shadow.mapSize.x!==shadowSize){sun.shadow.mapSize.set(shadowSize,shadowSize);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}view.visibility.update(state.x,state.z,q,true);
+  $('quality-value').textContent=q.toUpperCase();$('quality-description').textContent=q==='auto'?'Local scenery rendering and adaptive resolution.':q==='quality'?'Higher resolution and soft sun shadows.':'Shorter scenery range. Sun shadows disabled.';
 }
 function updateTrafficSetting(){traffic.enabled=preference.traffic!==false;$('traffic-value').textContent=traffic.enabled?'LIGHT / 18 CARS':'OFF';$('traffic-toggle').setAttribute('aria-pressed',String(traffic.enabled));}
 function openSettings(){if(mode==='settings'){closeSettings();return;}if(['map','help','garage'].includes(mode))return;modeBeforeSettings=mode;mode='settings';clearInput();$('pause-overlay').classList.add('hidden');$('settings-overlay').classList.remove('hidden');$('close-settings').focus();}
@@ -151,17 +151,17 @@ function updateHUD(){const input=controls.read(touch),surface=world.surface(stat
   $('waypoint-hud').classList.toggle('hidden',!waypoint);if(waypoint){const d=Math.hypot(waypoint.x-state.x,waypoint.z-state.z);$('waypoint-distance').textContent=d>1000?(d/1000).toFixed(2)+' KM':Math.round(d)+' M';if(d<20){waypoint=null;toast('WAYPOINT REACHED');}}
   drawMinimap();
 }
-function physics(dt){previous={...state};stepTraffic(traffic,world,state,dt);for(const event of stepDrive(state,world,controls.read(touch),dt))if(event==='recover'){previous={...state};toast('RETURNED TO THE ROAD','WATER RECOVERY');}
-  collideTraffic(state,traffic);state.y=world.surface(state.x,state.z).height+.55;acceleration=(state.speed-lastSpeed)/dt;lastSpeed=state.speed;
+function physics(dt){Object.assign(previous,state);const impactSpeed=Math.abs(state.speed);stepTraffic(traffic,world,state,dt);for(const event of stepDrive(state,world,controls.read(touch),dt)){if(event==='recover'){Object.assign(previous,state);toast('RETURNED TO THE ROAD','WATER RECOVERY');}else if(event==='collision')audio.effect('impact',impactSpeed/30);}
+  if(collideTraffic(state,traffic)&&impactSpeed>4)audio.effect('impact',impactSpeed/30);state.y=world.surface(state.x,state.z).height+.55;acceleration=(state.speed-lastSpeed)/dt;lastSpeed=state.speed;
   for(const l of world.landmarks)if(!visited.has(l.name)&&Math.hypot(state.x-l.x,state.z-l.z)<38){visited.add(l.name);toast(l.name.toUpperCase(),'NEW PLACE DISCOVERED');try{localStorage.setItem('horizon-world-discoveries-v1',JSON.stringify([...visited]));}catch{}}
 }
-function frame(timestamp){requestAnimationFrame(frame);const rawDt=(timestamp-lastTime)/1000||.016,dt=Math.min(rawDt,.05);lastTime=timestamp;time+=dt;hudTime+=dt;
+function frame(timestamp){requestAnimationFrame(frame);if(!lastTime)lastTime=timestamp;const rawDt=(timestamp-lastTime)/1000||.016,dt=Math.min(rawDt,.05);lastTime=timestamp;if(document.hidden)return;time+=dt;hudTime+=dt;
   if(mode==='playing'){accumulator+=dt;while(accumulator>=1/120){physics(1/120);accumulator-=1/120;}}
-  if(mode==='playing'||mode==='menu'||mode==='garage'){positionCar(mode==='playing'?dt:0);updateCamera(dt);}view.update(time);trafficView.update(mode==='playing'?clamp(accumulator*120,0,1):1);
+  if(mode==='playing'||mode==='menu'||mode==='garage'){positionCar(mode==='playing'?dt:0);updateCamera(dt);}view.update(time);view.visibility.update(state.x,state.z,preference.quality);trafficView.update(mode==='playing'?clamp(accumulator*120,0,1):1,state);
   if(mode==='playing'){performanceTime+=rawDt;performanceFrames++;if(performanceTime>=3){measuredFps=Math.round(performanceFrames/performanceTime);$('fps-value').textContent=measuredFps+' FPS';if(preference.quality==='auto'){resolutionScale=clamp(resolutionScale+(measuredFps<44?-.15:measuredFps>57?.05:0),.8,1.5);applyQuality();}performanceTime=0;performanceFrames=0;}}
   if(mode!=='menu'&&hudTime>1/15){updateHUD();hudTime=0;}
   if(toastTime>0){toastTime-=dt;if(toastTime<=0)$('toast').classList.remove('visible');}
-  audio.update(state,controls.read(touch),mode==='playing',muted,dt);
+  audio.update(state,controls.read(touch),mode==='playing',muted,dt,{offRoad:!world.surface(state.x,state.z).onRoad,nearShore:Math.abs(state.x-coast(state.z))<170,traffic:traffic.enabled?traffic.cars:[]});
   renderer.render(scene,camera);
 }
 // Keyboard input is attached in capture phase and focuses the canvas explicitly.
@@ -174,6 +174,7 @@ window.addEventListener('keydown',event=>{
   if(code==='KeyO'||key==='o'){event.preventDefault();openSettings();return;}
   if(code==='KeyV'||key==='v'){muted=!muted;if(muted)audio.silence();$('sound-button').style.opacity=muted?'.4':'1';return;}
   if(code==='KeyL'||key==='l'){lights=!lights;headlights.forEach(l=>l.visible=lights);return;}
+  if(mode==='playing'&&(code==='KeyH'||key==='h')){event.preventDefault();audio.effect('horn');return;}
   if(mode==='playing'&&(code==='KeyR'||key==='r')){recover();return;}
   if(mode==='playing'&&(code==='KeyC'||key==='c')){cycleCamera();return;}
   if(mode==='menu'&&code==='Enter')startDrive();
@@ -186,7 +187,7 @@ document.querySelectorAll('[data-vehicle]').forEach(b=>b.addEventListener('click
 $('garage-button').addEventListener('click',openGarage);$('menu-garage-button').addEventListener('click',openGarage);$('close-garage').addEventListener('click',closeGarage);$('use-car').addEventListener('click',closeGarage);
 $('settings-button').addEventListener('click',openSettings);$('close-settings').addEventListener('click',closeSettings);$('close-settings-button').addEventListener('click',closeSettings);
 $('quality-toggle').addEventListener('click',()=>{preference.quality=['auto','quality','performance'][(['auto','quality','performance'].indexOf(preference.quality)+1)%3];applyQuality();savePreferences();});
-$('traffic-toggle').addEventListener('click',()=>{preference.traffic=!traffic.enabled;updateTrafficSetting();trafficView.update();savePreferences();});
+$('traffic-toggle').addEventListener('click',()=>{preference.traffic=!traffic.enabled;updateTrafficSetting();trafficView.update(1,state);savePreferences();});
 $('camera-view-button').addEventListener('click',cycleCamera);$('play-button').addEventListener('click',startDrive);$('pause-button').addEventListener('click',pause);$('resume-button').addEventListener('click',resume);$('exit-button').addEventListener('click',menu);$('recover-button').addEventListener('click',()=>{resume();recover();});$('brand-home').addEventListener('click',e=>{e.preventDefault();if(mode==='playing')pause();});
 $('help-button').addEventListener('click',showHelp);$('close-help').addEventListener('click',closeHelp);$('close-help-button').addEventListener('click',closeHelp);$('map-button').addEventListener('click',toggleMap);$('mini-map-button').addEventListener('click',toggleMap);$('close-map').addEventListener('click',closeMap);$('clear-waypoint').addEventListener('click',()=>{waypoint=null;drawFullMap();});
 $('lighting-button').addEventListener('click',()=>setLighting((lighting+1)%3));$('time-toggle').addEventListener('click',()=>setLighting((lighting+1)%3));$('sound-button').addEventListener('click',()=>{initAudio();muted=!muted;if(muted)audio.silence();$('sound-button').style.opacity=muted?'.4':'1';});
@@ -195,4 +196,4 @@ document.querySelectorAll('[data-control]').forEach(button=>{const key=button.da
 window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);applyQuality();camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();if(mode==='menu')updateCamera(1,true);});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();pause();$('fatal-error').classList.remove('hidden');$('error-message').textContent='The graphics connection was interrupted. Reload to continue driving.';});
 makeAtlas();setLighting(0);setVehicle(preference.vehicle);applyQuality();updateTrafficSetting();selectSpawn(0);sportsCarPromise.then(()=>{sync();$('car-asset-status').textContent='FERRARI 458 ITALIA / MODEL BY VICENT091036';}).catch(()=>{$('car-asset-status').textContent='DETAILED MODEL UNAVAILABLE / FALLBACK CAR ACTIVE';}).finally(()=>{$('loading').classList.add('hidden');});requestAnimationFrame(frame);
-window.horizon={getState:()=>({...state,mode,world:'Horizon County',district:world.district(state.x,state.z),vehicle:currentCar.spec.id,traffic:traffic.enabled,trafficTime:traffic.time,assets:assetsStatus,carModel:garage[0].assetReady?'ferrari-458':'loading-or-fallback',city:view.cityStats,fps:measuredFps,quality:preference.quality,audio:audio.status,engine:audio.telemetry}),getInput:()=>controls.read(touch),getRendererInfo:()=>({...renderer.info.render}),getWorld:()=>world};
+window.horizon={getState:()=>({...state,mode,world:'Horizon County',district:world.district(state.x,state.z),vehicle:currentCar.spec.id,traffic:traffic.enabled,trafficTime:traffic.time,assets:assetsStatus,carModel:garage[0].assetReady?'ferrari-458':'loading-or-fallback',city:view.cityStats,fps:measuredFps,quality:preference.quality,audio:audio.status,engine:audio.telemetry,rendering:{...view.visibility.stats,fleet:{...trafficView.stats}}}),getInput:()=>controls.read(touch),getRendererInfo:()=>({...renderer.info.render}),getWorld:()=>world};

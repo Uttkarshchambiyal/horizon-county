@@ -2,6 +2,7 @@ import * as THREE from './vendor/three.module.min.js';
 import {terrainHeight,coast,seeded,BOUNDS} from './world-data.js';
 import {buildCity} from './city-view.js';
 import {buildRegions} from './region-view.js';
+import {streamStaticWorld} from './world-streaming.js';
 
 export function buildOpenWorld(scene,world){
   const group=new THREE.Group();scene.add(group);
@@ -25,7 +26,7 @@ export function buildOpenWorld(scene,world){
     color.multiplyScalar(.92+Math.sin(x*.06)*Math.sin(z*.07)*.035+random()*.1);colors.push(color.r,color.g,color.b);
   }
   groundGeo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));groundGeo.computeVertexNormals();
-  const terrain=new THREE.Mesh(groundGeo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1}));terrain.receiveShadow=true;group.add(terrain);
+  const terrain=new THREE.Mesh(groundGeo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1}));terrain.userData.range=2600;terrain.receiveShadow=true;group.add(terrain);
   const waterMaterial=new THREE.ShaderMaterial({uniforms:{time:{value:0},sky:{value:new THREE.Color(0xc0d6df)}},vertexShader:`
     varying vec3 p;varying vec3 view;uniform float time;
     void main(){vec3 v=position;v.z+=sin(v.x*.025+time*.6)*.13+sin(v.y*.016+time*.45)*.12;vec4 w=modelMatrix*vec4(v,1.);p=w.xyz;view=cameraPosition-w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
@@ -34,7 +35,7 @@ export function buildOpenWorld(scene,world){
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`});
-  const ocean=new THREE.Mesh(new THREE.PlaneGeometry(16000,16000,90,90),waterMaterial);ocean.rotation.x=-Math.PI/2;ocean.position.y=.05;group.add(ocean);
+  const ocean=new THREE.Mesh(new THREE.PlaneGeometry(16000,16000,90,90),waterMaterial);ocean.userData.alwaysVisible=true;ocean.rotation.x=-Math.PI/2;ocean.position.y=.05;group.add(ocean);
   function asphaltTexture(){
     const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d'),im=ctx.createImageData(256,256);
     for(let i=0;i<im.data.length;i+=4){const n=125+random()*38;im.data[i]=n;im.data[i+1]=n;im.data[i+2]=n;im.data[i+3]=255;}ctx.putImageData(im,0,0);
@@ -50,7 +51,7 @@ export function buildOpenWorld(scene,world){
       if(i&&!(skip&&skip(f))){const a=(i-1)*2;if(left<right)indices.push(a,a+1,a+2,a+1,a+3,a+2);else indices.push(a,a+2,a+1,a+1,a+2,a+3);}
     }
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(ps,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();
-    const mesh=new THREE.Mesh(g,m);mesh.name=road.id+":"+left+":"+right;mesh.receiveShadow=true;group.add(mesh);
+    const mesh=new THREE.Mesh(g,m);mesh.userData.range=1450;mesh.name=road.id+":"+left+":"+right;mesh.receiveShadow=true;group.add(mesh);
   }
   for(const road of world.roads){
     const half=road.width/2;
@@ -81,6 +82,9 @@ export function buildOpenWorld(scene,world){
     }
   }
   const city=buildCity(group,world),regions=buildRegions(group,world);
+  // Every parked vehicle has a marked bay beside its building.
+  for(const p of world.parkedCars){addBox(3,.05,6.2,concrete,p.x,p.y+.03,p.z);for(const side of[-1,1])addBox(.09,.015,5.7,white,p.x+side*1.4,p.y+.065,p.z);addBox(2.8,.015,.09,white,p.x,p.y+.065,p.z+2.9);}
+
   // A beach boardwalk, long pier and a small marina give the coast a destination.
   addBox(8,.35,1150,wood,-1040,1.3,280);
   addBox(145,.6,16,wood,-1088,1.7,320);
@@ -99,10 +103,10 @@ export function buildOpenWorld(scene,world){
   const trunks=new THREE.InstancedMesh(palmTrunk,trunkMat,palms.length),leaves=new THREE.InstancedMesh(leafGeo,leafMat,palms.length*7),o=new THREE.Object3D();
   palms.forEach((p,i)=>{const y=terrainHeight(p.x,p.z);o.position.set(p.x,y+p.h/2,p.z);o.scale.set(1,p.h,1);o.rotation.set(0,0,.035*Math.sin(i));o.updateMatrix();trunks.setMatrixAt(i,o.matrix);
     for(let j=0;j<7;j++){o.position.set(p.x,y+p.h,p.z);o.scale.set(1,1,1);o.rotation.set(0,j*Math.PI*2/7+i,0);o.updateMatrix();leaves.setMatrixAt(i*7+j,o.matrix);}});
-  trunks.castShadow=true;leaves.castShadow=true;group.add(trunks,leaves);
+  trunks.userData.range=850;leaves.userData.range=850;trunks.castShadow=true;leaves.castShadow=true;group.add(trunks,leaves);
   const trees=[];for(let i=0;i<600;i++){const x=random()*2800-950,z=-500-random()*1500,r=world.nearestRoad(x,z);if((!r||r.distance>18)&&terrainHeight(x,z)>8)trees.push({x,z,h:4+random()*9});}
-  const crowns=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,2),material(0x536e50),trees.length),stems=new THREE.InstancedMesh(palmTrunk,trunkMat,trees.length);
-  trees.forEach((t,i)=>{const y=terrainHeight(t.x,t.z);o.position.set(t.x,y+t.h*.6,t.z);o.scale.set(t.h*.36,t.h*.55,t.h*.36);o.rotation.set(0,i,0);o.updateMatrix();crowns.setMatrixAt(i,o.matrix);o.position.y=y+t.h*.3;o.scale.set(.6,t.h*.6,.6);o.updateMatrix();stems.setMatrixAt(i,o.matrix);});crowns.castShadow=true;group.add(crowns,stems);
+  const crowns=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),material(0x536e50),trees.length),stems=new THREE.InstancedMesh(palmTrunk,trunkMat,trees.length);
+  trees.forEach((t,i)=>{const y=terrainHeight(t.x,t.z);o.position.set(t.x,y+t.h*.6,t.z);o.scale.set(t.h*.36,t.h*.55,t.h*.36);o.rotation.set(0,i,0);o.updateMatrix();crowns.setMatrixAt(i,o.matrix);o.position.y=y+t.h*.3;o.scale.set(.6,t.h*.6,.6);o.updateMatrix();stems.setMatrixAt(i,o.matrix);});crowns.userData.range=900;stems.userData.range=900;crowns.castShadow=true;group.add(crowns,stems);
   // Original roadside businesses and highway destination boards.
   function sign(text,w,h,x,z,angle=0,bg='#164f4d'){
     const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,512,128);ctx.strokeStyle='#d7dfca';ctx.lineWidth=5;ctx.strokeRect(8,8,496,112);ctx.fillStyle='#f2f2de';ctx.textAlign='center';ctx.font='bold 44px sans-serif';ctx.fillText(text,256,80);
@@ -111,7 +115,8 @@ export function buildOpenWorld(scene,world){
   sign('PACIFIC BEACH  ←',12,3,-685,230);sign('DOWNTOWN  ↑',12,3,35,620);sign('CRESTLINE PASS  ↑',13,3,-445,-450);sign('EAST GATE  →',11,3,750,120);sign('HORIZON AUTO',14,3,-55,620,0,'#a35c3d');
   for(const [m,matrices] of batches){const mesh=new THREE.InstancedMesh(cube,m,matrices.length);matrices.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.castShadow=![white,yellow,asphalt].includes(m);mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);}
   // Atmosphere uses a large gradient dome; distant terrain fades into the sky.
-  const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,32,20),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{top:{value:new THREE.Color(0x6da2c6)},bottom:{value:new THREE.Color(0xe1d9be)}},vertexShader:'varying float h;void main(){h=normalize(position).y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying float h;uniform vec3 top;uniform vec3 bottom;void main(){gl_FragColor=vec4(mix(bottom,top,pow(max(0.,h),.65)),1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));group.add(sky);
-  const sunDisk=new THREE.Mesh(new THREE.SphereGeometry(65,24,16),new THREE.MeshBasicMaterial({color:0xffe8b1}));sunDisk.position.set(-1800,1600,-3500);group.add(sunDisk);
-  return {group,city,regions,regionStats:regions.stats,cityStats:city.stats,surfaces:{asphalt,terrain:terrain.material,sizeX,sizeZ},setSky(top,bottom){sky.material.uniforms.top.value.set(top);sky.material.uniforms.bottom.value.set(bottom);waterMaterial.uniforms.sky.value.set(bottom);},update(time){waterMaterial.uniforms.time.value=time;},stats:{buildings:world.buildings.length,roadKm:world.roads.reduce((s,r)=>s+r.length,0)/1000,palms:palms.length}};
+  const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,32,20),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{top:{value:new THREE.Color(0x6da2c6)},bottom:{value:new THREE.Color(0xe1d9be)}},vertexShader:'varying float h;void main(){h=normalize(position).y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying float h;uniform vec3 top;uniform vec3 bottom;void main(){gl_FragColor=vec4(mix(bottom,top,pow(max(0.,h),.65)),1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));sky.userData.alwaysVisible=true;group.add(sky);
+  const sunDisk=new THREE.Mesh(new THREE.SphereGeometry(65,24,16),new THREE.MeshBasicMaterial({color:0xffe8b1}));sunDisk.userData.alwaysVisible=true;sunDisk.position.set(-1800,1600,-3500);group.add(sunDisk);
+  const visibility=streamStaticWorld(group);
+  return {group,visibility,city,regions,regionStats:regions.stats,cityStats:city.stats,surfaces:{asphalt,terrain:terrain.material,sizeX,sizeZ},setSky(top,bottom){sky.material.uniforms.top.value.set(top);sky.material.uniforms.bottom.value.set(bottom);waterMaterial.uniforms.sky.value.set(bottom);},update(time){waterMaterial.uniforms.time.value=time;},stats:{buildings:world.buildings.length,roadKm:world.roads.reduce((s,r)=>s+r.length,0)/1000,palms:palms.length}};
 }

@@ -1,30 +1,49 @@
 export function createRegionLayout(world,height,coast,random){
-  const items=[];
-  function add(type,x,z,r=2,angle=0,solid=false){
-    const y=height(x,z),road=world.nearestRoad(x,z);
-    if(y<.35||road&&road.distance<road.road.width/2+r+5)return;
-    if(world.buildings.some(b=>Math.abs(b.x-x)<b.w/2+r+2&&Math.abs(b.z-z)<b.d/2+r+2))return;
-    items.push({type,x,z,y,r,angle,solid,seed:Math.floor(random()*10000)});
+  const items=[],roadSamples=world.roads.flatMap(road=>road.samples.map(p=>({...p,half:road.width/2})));
+  const clearRoad=(x,z,r,buffer)=>!roadSamples.some(p=>Math.hypot(p.x-x,p.z-z)<p.half+r+buffer);
+  function add(type,x,z,r=2,angle=0,solid=false,site='landscape',buffer=10){
+    const y=height(x,z);
+    if(y<.4||!clearRoad(x,z,r,buffer))return null;
+    if(world.buildings.some(b=>Math.abs(b.x-x)<b.w/2+r+3&&Math.abs(b.z-z)<b.d/2+r+3))return null;
+    if(items.some(i=>i.site===site&&i.solid&&Math.hypot(i.x-x,i.z-z)<i.r+r+1))return null;
+    const item={type,x,z,y,r,angle,solid,site,seed:Math.floor(random()*10000)};items.push(item);return item;
   }
-  for(let z=-340;z<1000;z+=45){
-    const shore=coast(z);
-    add('umbrella',shore+58+random()*24,z,2.5,random()*6.28);
-    add('lounger',shore+79,z+7,1.2,1.55);add('towel',shore+50,z+12,1,random()*6.28);
-    if(Math.round(z/45)%3===0)add('surfboards',shore+111,z,2,1.5);
+  // Furniture belongs to five beach clubs, with clear access along the shore.
+  for(const [index,z] of[-265,-20,460,740,940].entries()){
+    const site='beach-'+index,shore=coast(z),tower=add('lifeguard',shore+101,z,3,Math.PI/2,true,site);
+    if(!tower)continue;
+    for(const row of[-1,1])for(const col of[-2,-1,0,1,2]){
+      const uz=z+col*11,ux=coast(uz)+63+row*13;
+      const umbrella=add('umbrella',ux,uz,2.5,Math.PI/2,false,site);
+      if(umbrella){add('lounger',ux+2.7,uz-1.2,1.2,Math.PI/2,false,site);add('towel',ux-2,uz+1,1,Math.PI/2,false,site);}
+    }
+    add('surfboards',shore+107,z-11,2,Math.PI/2,false,site);add('shower',shore+114,z-13,1,0,false,site);
+    add('kiosk',coast(z+31)+106,z+31,4,Math.PI/2,true,site);add('picnic',coast(z+40)+113,z+40,3,0,false,site);
+    add('volleyball',coast(z-43)+85,z-43,9,0,false,site);
   }
-  for(const z of[-260,180,650,920])add('lifeguard',coast(z)+95,z,5,Math.PI/2,true);
-  for(const z of[-80,420,820]){add('kiosk',coast(z)+134,z,5,Math.PI/2,true);add('volleyball',coast(z)+83,z+28,9);}
-  for(let z=-200;z<1000;z+=85){add('shower',coast(z)+127,z,1);add('picnic',coast(z)+143,z+12,3);}
   const ridge=world.roads.find(r=>r.id==='ridge');
-  for(const distance of[420,1050,1830,2720]){
-    const f=ridge.frame(distance),side=distance===1050?-1:1,x=f.x+f.nx*side*38,z=f.z+f.nz*side*38;
-    add('lookout',x,z,7,f.angle,true);add('trail-sign',f.x+f.nx*side*16,f.z+f.nz*side*16,1,f.angle);
-    add('tent',x+15,z+10,4,f.angle,true);add('picnic',x-12,z+9,3,f.angle);add('campfire',x+11,z-1,2);
-    add('cabin',x+24,z-15,6,f.angle,true);
+  // Each mountain stop has a signed turnout, a footpath and an observation deck.
+  for(const [index,distance] of[420,1050,1830,2720].entries()){
+    const f=ridge.frame(distance),side=index===1?-1:1,site='ridge-'+index,angle=f.angle;
+    const at=(along,off)=>({x:f.x+f.tx*along+f.nx*side*off,z:f.z+f.tz*along+f.nz*side*off});
+    const p=at(0,42),deck=add('lookout',p.x,p.z,7,angle,true,site);
+    if(!deck)continue;
+    const pad=at(-12,26);add('turnout',pad.x,pad.z,8,angle,false,site,3);
+    const sign=at(-23,24);add('trail-sign',sign.x,sign.z,1,angle,false,site,5);
+    const table=at(15,42);add('picnic',table.x,table.z,3,angle,false,site);
+    if(index===0||index===2){
+      const t=at(22,64),camp=add('tent',t.x,t.z,4,angle,true,site);
+      if(camp){const fire=at(12,64);add('campfire',fire.x,fire.z,2,angle,false,site);}
+      const c=at(-21,67);add('cabin',c.x,c.z,5,angle,true,site);
+    }
+    // Short gravel paths lead from the parking bay to the lookout.
+    for(let off=29;off<38;off+=3){const q=at(0,off);add('path',q.x,q.z,1.5,angle,false,site,3);}
   }
+  // Forests and rock outcrops stay well beyond road shoulders and recreation sites.
   for(let i=0;i<480;i++){
-    const x=-780+random()*2400,z=-600-random()*1450,y=height(x,z);if(y<25)continue;
-    add(i%4===0?'rock':'pine',x,z,i%4===0?3+random()*3:2.8,random()*6.28);
+    const x=-780+random()*2400,z=-650-random()*1400;if(height(x,z)<25)continue;
+    if(items.some(p=>p.site!=='landscape'&&Math.hypot(p.x-x,p.z-z)<p.r+20))continue;
+    const rock=i%4===0;add(rock?'rock':'pine',x,z,rock?3+random()*3:2.8,random()*6.28,false,'landscape',rock?28:16);
   }
   return items;
 }
