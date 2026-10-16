@@ -1,6 +1,7 @@
 import * as THREE from './vendor/three.module.min.js';
 import { TRACKS, makeCourse } from './tracks.js';
 import { createCar, addReflections } from './car.js';
+import { createDrivingControls } from './controls.js';
 import { newCarState, stepCar, resetAtCheckpoint, clamp, angleDelta } from './physics.js';
 
 const $=id=>document.getElementById(id);
@@ -35,7 +36,7 @@ function box(w,h,d,material,x=0,y=0,z=0,parent=world) {
   const m=new THREE.Mesh(unitBox,material);m.scale.set(w,h,d);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
 }
 let course,selected=0,state,mode='menu',cameraMode=0,steerVisual=0,countTime=0,toastTime=0,clockTime=0;
-const keys=new Set(),touch={left:false,right:false,throttle:false,brake:false,boost:false};
+const controls=createDrivingControls(),touch={left:false,right:false,throttle:false,brake:false,boost:false};
 let isMuted=false,helpWasPlaying=false,previousTimestamp=0,accumulator=0,drawnMap=null;
 let previousState,renderState,cameraHeading=0,hudTime=0;
 function syncCar(){previousState={...state};renderState={...state};steerVisual=0;positionCar(0);}
@@ -249,7 +250,9 @@ function selectTrack(index){
 }
 function formatTime(t){const m=Math.floor(t/60),s=Math.floor(t%60),h=Math.floor((t%1)*100);return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(h).padStart(2,'0')}`;}
 function toast(text,sub='',duration=2){$('toast').innerHTML=text+(sub?`<small>${sub}</small>`:'');$('toast').classList.add('visible');toastTime=duration;}
-function clearInputs(){keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);document.querySelectorAll('[data-control]').forEach(b=>b.classList.remove('pressed'));}
+function clearInputs(){controls.clear();Object.keys(touch).forEach(k=>touch[k]=false);document.querySelectorAll('[data-control]').forEach(b=>b.classList.remove('pressed'));}
+function focusDriving(){canvas.focus({preventScroll:true});}
+canvas.addEventListener('pointerdown',focusDriving);
 function startRace(){
   initAudio();clearInputs();state=newCarState(course);mode='countdown';countTime=3.4;accumulator=0;syncCar();
   document.body.classList.add('racing');$('menu').classList.add('hidden');$('race-hud').classList.remove('hidden');$('pause-button').classList.remove('hidden');
@@ -257,11 +260,11 @@ function startRace(){
   $('countdown').classList.remove('hidden');$('countdown').textContent='3';
   $('race-track-name').textContent=course.config.name.toUpperCase();$('map-track').textContent=course.config.number+' / '+course.config.name.split(' ')[0].toUpperCase();
   $('best-time').textContent=bests[course.config.id]?`PERSONAL BEST ${formatTime(bests[course.config.id])}`:'SET YOUR FIRST RECORD';
-  cameraMode=0;updateCamera(1,true);updateHUD();beep(420);
+  cameraMode=0;updateCamera(1,true);updateHUD();focusDriving();beep(420);
 }
 function showMenu(){mode='menu';clearInputs();document.body.classList.remove('racing');$('menu').classList.remove('hidden');$('race-hud').classList.add('hidden');$('pause-button').classList.add('hidden');for(const id of['pause-overlay','finish-overlay','help-overlay'])$(id).classList.add('hidden');state=newCarState(course);syncCar();updateCamera(1,true);}
 function pause(){if(mode!=='playing'&&mode!=='countdown')return;mode=mode==='countdown'?'paused-countdown':'paused';$('pause-overlay').classList.remove('hidden');clearInputs();$('resume-button').focus();}
-function resume(){if(mode!=='paused'&&mode!=='paused-countdown')return;mode=mode==='paused-countdown'?'countdown':'playing';$('pause-overlay').classList.add('hidden');clearInputs();}
+function resume(){if(mode!=='paused'&&mode!=='paused-countdown')return;mode=mode==='paused-countdown'?'countdown':'playing';$('pause-overlay').classList.add('hidden');clearInputs();focusDriving();}
 function reset(){if(mode!=='playing')return;resetAtCheckpoint(state,course);syncCar();toast('CHECKPOINT RESET','+3 SECONDS');beep(160,.2,.035);updateCamera(1,true);}
 function finish(){
   mode='finished';clearInputs();$('finish-overlay').classList.remove('hidden');
@@ -273,9 +276,7 @@ function finish(){
   $('medal').style.background={GOLD:'#e8ce71',SILVER:'#c4d0d3',BRONZE:'#c99475',FINISHER:'#c8ff4a'}[medal];
   beep(660,.25);setTimeout(()=>beep(880,.4),200);$('again-button').focus();
 }
-function getInput(){return{throttle:keys.has('KeyW')||keys.has('ArrowUp')||touch.throttle?1:0,brake:keys.has('KeyS')||keys.has('ArrowDown')||touch.brake,
-  steer:((keys.has('KeyD')||keys.has('ArrowRight')||touch.right)?1:0)-((keys.has('KeyA')||keys.has('ArrowLeft')||touch.left)?1:0),
-  boost:keys.has('ShiftLeft')||keys.has('ShiftRight')||touch.boost,drift:keys.has('Space')};}
+function getInput(){return controls.read(touch);}
 function updatePhysics(dt){
   previousState={...state};
   const events=stepCar(state,course,getInput(),dt);
@@ -339,6 +340,12 @@ function updateMap(){
   const p=xy(state);ctx.beginPath();ctx.fillStyle=course.config.color;ctx.arc(...p,5,0,6.28);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
 }
 function updateHUD(){
+  const input=getInput();
+  for(const [action,on] of Object.entries({throttle:input.throttle,brake:input.brake,left:input.left,right:input.right})){
+    document.querySelectorAll(`[data-drive-key="${action}"]`).forEach(key=>key.classList.toggle('pressed',!!on));
+  }
+  $('steering-label').textContent=input.steer<0?'← LEFT':input.steer>0?'RIGHT →':state.speed<.1&&state.speed>-.1?'HOLD W + A / D TO TURN':'STEERING';
+  $('steering-position').style.transform=`translateX(${state.steering*36}px)`;
   $('race-time').textContent=formatTime(state.elapsed);$('speed').textContent=String(Math.round(Math.abs(state.speed)*3.6)).padStart(3,'0');
   $('gear').textContent=state.speed<-.1?'R':state.speed<1?'N':Math.min(6,Math.floor(state.speed/11)+1);
   const progress=Math.min(100,Math.round(state.distance/course.length*100));$('progress-value').textContent=progress;$('progress-fill').style.width=progress+'%';
@@ -383,8 +390,8 @@ $('help-button').addEventListener('click',()=>{helpWasPlaying=mode==='playing'||
 function closeHelp(){$('help-overlay').classList.add('hidden');if(helpWasPlaying){resume();helpWasPlaying=false;}}
 $('close-help').addEventListener('click',closeHelp);$('got-it-button').addEventListener('click',closeHelp);
 window.addEventListener('keydown',event=>{
-  if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(event.code))event.preventDefault();
-  if(event.repeat)return;
+  if(controls.keydown(event,mode==='playing'||mode==='countdown'))return;
+  if(event.repeat||event.metaKey||event.ctrlKey||event.altKey)return;
   if(event.code==='Escape'||event.code==='KeyP'){
     if(!$('help-overlay').classList.contains('hidden'))closeHelp();else if(mode==='playing'||mode==='countdown')pause();else resume();return;
   }
@@ -392,9 +399,8 @@ window.addEventListener('keydown',event=>{
   if(event.code==='KeyR'){reset();return;}
   if(event.code==='KeyC'){if(mode==='playing'){cameraMode=(cameraMode+1)%3;toast(['CHASE CAMERA','LOW CAMERA','HIGH CAMERA'][cameraMode],'',1);}return;}
   if(mode==='menu'&&event.code==='Enter'){startRace();return;}
-  if(mode==='playing'||mode==='countdown')keys.add(event.code);
-});
-window.addEventListener('keyup',event=>keys.delete(event.code));
+},true);
+window.addEventListener('keyup',event=>controls.keyup(event),true);
 window.addEventListener('blur',()=>{clearInputs();pause();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInputs();pause();}});
 document.querySelectorAll('[data-control]').forEach(button=>{
@@ -407,4 +413,4 @@ canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();pause(
 selectTrack(0);$('loading').classList.add('hidden');requestAnimationFrame(frame);
 
 // Read-only diagnostics for repeatable physics and browser verification.
-window.horizon={getState:()=>({...state,mode,track:course.config.id,length:course.length}),getRendererInfo:()=>({...renderer.info.render}),getCourse:()=>course};
+window.horizon={getState:()=>({...state,mode,track:course.config.id,length:course.length}),getInput:()=>({...getInput()}),getRendererInfo:()=>({...renderer.info.render}),getCourse:()=>course};

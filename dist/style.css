@@ -13,3 +13,6 @@ body.racing .vignette{background:linear-gradient(180deg,rgba(7,15,19,.45),transp
 
 .vehicle-info{color:#f2f4e7;text-shadow:0 1px 8px #10242b66}.vehicle-info .paint.active:after{border-color:#f2f4e7}.track-heading>span:last-child,.menu-footer>span:last-child{color:#f2f4e7;text-shadow:0 1px 6px #10242b66}.race-controls .driving-keys{margin-bottom:4px;letter-spacing:1px}.driving-keys .key:not(:first-child){margin-left:9px}
 .night{color:var(--ink);color-scheme:dark}
+
+#world:focus{outline:none}.key.pressed{background:var(--acid);border-color:var(--acid);color:#17292b;opacity:1;box-shadow:0 0 14px #c8ff4a33}.steering-feedback{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:12px;font-size:8px;font-weight:600;letter-spacing:1px}.steering-meter{height:3px;width:82px;background:#ffffff38;position:relative}.steering-meter:before{content:'';position:absolute;left:40px;top:-3px;height:9px;width:1px;background:#fff5}.steering-meter i{position:absolute;left:37px;top:-2px;width:8px;height:7px;background:var(--acid);border-radius:1px}
+@media(max-width:700px){.steering-feedback{font-size:6px;gap:7px}.steering-meter{width:82px}}

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
-    "check": "node --check dist/car.js && node --check dist/game.js && node --check dist/tracks.js && node --check dist/physics.js",
-    "test": "node scripts/check-physics.mjs"
+    "check": "node --check dist/controls.js && node --check dist/car.js && node --check dist/game.js && node --check dist/tracks.js && node --check dist/physics.js",
+    "test": "node scripts/check-controls.mjs && node scripts/check-physics.mjs"
   }
 }
