@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
-import {createRegionLayout} from './region-data.js?v=smooth-6';
-import {createStreetDetails} from './street-details.js?v=smooth-6';
+import {createRegionLayout} from './region-data.js?v=road-depth-7';
+import {createStreetDetails} from './street-details.js?v=road-depth-7';
 export const ROAD_SURFACE=.095;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};

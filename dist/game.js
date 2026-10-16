@@ -1,17 +1,17 @@
 import * as THREE from './vendor/three.module.min.js';
-import {addReflections} from './car.js?v=smooth-6';
-import {createDrivingControls} from './controls.js?v=smooth-6';
-import {makeOpenWorld,terrainHeight,coast,clamp} from './world-data.js?v=smooth-6';
-import {buildOpenWorld} from './world-view.js?v=smooth-6';
-import {newDriveState,stepDrive,recoverCar} from './driving.js?v=smooth-6';
-import {VEHICLES,createVehicle} from './vehicles.js?v=smooth-6';
-import {makeTraffic,stepTraffic,collideTraffic} from './traffic.js?v=smooth-6';
-import {buildTrafficView} from './traffic-view.js?v=smooth-6';
-import {loadWorldAssets} from './assets.js?v=smooth-6';
-import {loadSportsCar} from './sports-car.js?v=smooth-6';
-import {animateVehicle} from './vehicle-motion.js?v=smooth-6';
-import {createEngineAudio,engineTelemetry} from './engine-audio.js?v=smooth-6';
-import {renderPixelRatio,createFrameBudget,stabilizeSun} from './render-quality.js?v=smooth-6';
+import {addReflections} from './car.js?v=road-depth-7';
+import {createDrivingControls} from './controls.js?v=road-depth-7';
+import {makeOpenWorld,terrainHeight,coast,clamp} from './world-data.js?v=road-depth-7';
+import {buildOpenWorld} from './world-view.js?v=road-depth-7';
+import {newDriveState,stepDrive,recoverCar} from './driving.js?v=road-depth-7';
+import {VEHICLES,createVehicle} from './vehicles.js?v=road-depth-7';
+import {makeTraffic,stepTraffic,collideTraffic} from './traffic.js?v=road-depth-7';
+import {buildTrafficView} from './traffic-view.js?v=road-depth-7';
+import {loadWorldAssets} from './assets.js?v=road-depth-7';
+import {loadSportsCar} from './sports-car.js?v=road-depth-7';
+import {animateVehicle} from './vehicle-motion.js?v=road-depth-7';
+import {createEngineAudio,engineTelemetry} from './engine-audio.js?v=road-depth-7';
+import {renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias} from './render-quality.js?v=road-depth-7';
 const $=id=>document.getElementById(id),canvas=$('world');
 let renderer;
 try{const context=canvas.getContext('webgl2',{antialias:true,powerPreference:'high-performance'}),reversedDepth=!!context?.getExtension?.('EXT_clip_control');renderer=new THREE.WebGLRenderer({canvas,context,antialias:true,reversedDepthBuffer:reversedDepth,logarithmicDepthBuffer:!reversedDepth,powerPreference:'high-performance'});}catch(error){$('loading').classList.add('hidden');$('fatal-error').classList.remove('hidden');$('error-message').textContent='This world needs a browser with WebGL and hardware acceleration.';throw error;}
@@ -23,7 +23,8 @@ const camera=new THREE.PerspectiveCamera(57,innerWidth/innerHeight,.3,8500);
 const ambient=new THREE.HemisphereLight(0xbcd8e9,0x77714f,2.1);scene.add(ambient);
 const sun=new THREE.DirectionalLight(0xffd1a0,3.1);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.near=1;sun.shadow.camera.far=520;
 Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65});sun.shadow.bias=-.00015;sun.shadow.normalBias=.055;scene.add(sun,sun.target);
-const world=makeOpenWorld(),view=buildOpenWorld(scene,world);
+const reversedDepth=!!renderer.capabilities?.reversedDepthBuffer;
+const world=makeOpenWorld(),view=buildOpenWorld(scene,world,{reversedDepth});
 const car=new THREE.Group();scene.add(car);
 const garage=VEHICLES.map(v=>createVehicle(car,v.id));
 let currentCar=garage[0],{bodyMat,tailMat,wheels,steerWheels,flames}=currentCar;
@@ -48,7 +49,7 @@ let cameraBack=10.5,measuredFps=0,acceleration=0,lastSpeed=0,lastIdleRender=0,re
 // entire county into a shadow map every frame in the smooth presets.
 const shadowCanvas=document.createElement('canvas');shadowCanvas.width=shadowCanvas.height=64;
 const shadowContext=shadowCanvas.getContext('2d'),shadowGradient=shadowContext.createRadialGradient(32,32,9,32,32,32);shadowGradient.addColorStop(0,'rgba(0,8,12,.5)');shadowGradient.addColorStop(1,'rgba(0,8,12,0)');shadowContext.fillStyle=shadowGradient;shadowContext.fillRect(0,0,64,64);
-const contactShadow=new THREE.Mesh(new THREE.PlaneGeometry(3.3,6).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shadowCanvas),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));scene.add(contactShadow);
+const contactShadow=new THREE.Mesh(new THREE.PlaneGeometry(3.3,6).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shadowCanvas),transparent:true,depthWrite:false,...surfaceDepthBias(reversedDepth,2)}));scene.add(contactShadow);
 const visited=new Set();try{for(const name of JSON.parse(localStorage.getItem('horizon-world-discoveries-v1')||'[]'))visited.add(name);}catch{}
 const look=new THREE.Vector3(),lookGoal=new THREE.Vector3(),cameraGoal=new THREE.Vector3();
 const audio=createEngineAudio();

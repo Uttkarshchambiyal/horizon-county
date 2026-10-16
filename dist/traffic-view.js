@@ -1,8 +1,8 @@
 import * as THREE from './vendor/three.module.min.js';
-import {fleetModel,FLEET_TYPES} from './traffic-models.js?v=smooth-6';
-import {signalState} from './traffic.js?v=smooth-6';
-import {terrainHeight} from './world-data.js?v=smooth-6';
-import {enableInstanceFade,distanceFade} from './render-quality.js?v=smooth-6';
+import {fleetModel,FLEET_TYPES} from './traffic-models.js?v=road-depth-7';
+import {signalState} from './traffic.js?v=road-depth-7';
+import {terrainHeight} from './world-data.js?v=road-depth-7';
+import {enableInstanceFade,distanceFade} from './render-quality.js?v=road-depth-7';
 
 export function buildTrafficView(scene,world,traffic){
   const group=new THREE.Group();group.name='Local animated traffic fleet';scene.add(group);

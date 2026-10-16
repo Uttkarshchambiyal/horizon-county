@@ -1,10 +1,11 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=smooth-6';
-import {buildCity} from './city-view.js?v=smooth-6';
-import {buildRegions} from './region-view.js?v=smooth-6';
-import {streamStaticWorld} from './world-streaming.js?v=smooth-6';
+import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=road-depth-7';
+import {buildCity} from './city-view.js?v=road-depth-7';
+import {buildRegions} from './region-view.js?v=road-depth-7';
+import {streamStaticWorld} from './world-streaming.js?v=road-depth-7';
+import {surfaceDepthBias} from './render-quality.js?v=road-depth-7';
 
-export function buildOpenWorld(scene,world){
+export function buildOpenWorld(scene,world,{reversedDepth=false}={}){
   const group=new THREE.Group();scene.add(group);
   const random=seeded(9103),cube=new THREE.BoxGeometry(1,1,1),batches=new Map();
   const material=(color,roughness=.8,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
@@ -49,8 +50,8 @@ float wave=sin(p.x*.13+p.z*.19+time)*sin(p.x*.024-p.z*.04+time*.4);float glint=p
     ctx.strokeStyle='#858983';ctx.lineWidth=.5;for(let i=0;i<12;i++){ctx.beginPath();ctx.moveTo(random()*256,random()*256);ctx.lineTo(random()*256,random()*256);ctx.stroke();}
     const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
   }
-  const asphalt=new THREE.MeshStandardMaterial({color:0x55585a,map:asphaltTexture(),roughness:.94,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
-  const paintWhite=white.clone(),paintYellow=yellow.clone();for(const m of[paintWhite,paintYellow]){m.polygonOffset=true;m.polygonOffsetFactor=-3;m.polygonOffsetUnits=-3;m.depthWrite=false;}
+  const asphalt=new THREE.MeshStandardMaterial({color:0x55585a,map:asphaltTexture(),roughness:.94,...surfaceDepthBias(reversedDepth)});
+  const paintWhite=white.clone(),paintYellow=yellow.clone();for(const m of[paintWhite,paintYellow])Object.assign(m,surfaceDepthBias(reversedDepth,3),{depthWrite:false});
   const inJunction=(f,road)=>road.kind==='street'&&world.roads.some(other=>other!==road&&other.kind==='street'&&((other.id.startsWith('avenue')&&Math.abs(f.x-other.samples[0].x)<other.width/2+3)||(other.id.startsWith('street')&&Math.abs(f.z-other.samples[0].z)<other.width/2+3)));
   function strip(road,left,right,rise,m,skip){
     const ps=[],uv=[],indices=[];

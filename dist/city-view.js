@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight,seeded} from './world-data.js?v=smooth-6';
-import {createFacadeLibrary} from './facade-materials.js?v=smooth-6';
+import {terrainHeight,seeded} from './world-data.js?v=road-depth-7';
+import {createFacadeLibrary} from './facade-materials.js?v=road-depth-7';
 
 // Street-front architecture has separate silhouettes and human-scale floors.
 // Static faces are merged by material; repeated trim and furniture is instanced.

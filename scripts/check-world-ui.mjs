@@ -8,7 +8,7 @@ import {makeTraffic,stepTraffic,collideTraffic} from '../dist/traffic.js';
 import {buildTrafficView} from '../dist/traffic-view.js';
 import {animateVehicle} from '../dist/vehicle-motion.js';
 import {createEngineAudio,engineTelemetry} from '../dist/engine-audio.js';
-import {renderPixelRatio,createFrameBudget,stabilizeSun} from '../dist/render-quality.js';
+import {renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias} from '../dist/render-quality.js';
 import {createDrivingControls} from '../dist/controls.js';
 import {makeOpenWorld,terrainHeight,coast,clamp} from '../dist/world-data.js';
 import {buildOpenWorld} from '../dist/world-view.js';
@@ -32,7 +32,7 @@ globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.devicePixelRat
 let callback;globalThis.requestAnimationFrame=fn=>callback=fn;
 let renders=0;class Renderer{constructor(){this.shadowMap={};this.info={render:{}};}setPixelRatio(value){this.pixelRatio=value;}getPixelRatio(){return this.pixelRatio;}setSize(){}render(){renders++;}}
 const source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-const dependencies={renderPixelRatio,createFrameBudget,stabilizeSun,animateVehicle,createEngineAudio,engineTelemetry,THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadSportsCar:async v=>{v.assetReady=true;return v;},loadWorldAssets:async()=>({loaded:3,total:3})};
+const dependencies={renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias,animateVehicle,createEngineAudio,engineTelemetry,THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadSportsCar:async v=>{v.assetReady=true;return v;},loadWorldAssets:async()=>({loaded:3,total:3})};
 new Function(...Object.keys(dependencies),source)(...Object.values(dependencies));
 await new Promise(resolve=>setImmediate(resolve));
 const key=(code,key,up=false)=>{for(const fn of listeners.get(up?'keyup':'keydown')||[])fn({code,key,preventDefault(){}});};

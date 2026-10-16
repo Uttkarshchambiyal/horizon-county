@@ -1,6 +1,6 @@
-import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=smooth-6';
-import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=smooth-6';
-import {vehicleSpec} from './vehicles.js?v=smooth-6';
+import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=road-depth-7';
+import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=road-depth-7';
+import {vehicleSpec} from './vehicles.js?v=road-depth-7';
 
 // A small, deterministic fleet follows continuous right-hand lanes. It runs on
 // the same fixed clock as the player, so pausing freezes cars and signals.

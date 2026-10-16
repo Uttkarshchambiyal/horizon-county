@@ -1,5 +1,10 @@
 import * as THREE from './vendor/three.module.min.js';
 
+// In reversed depth a larger depth value is closer to the camera. Three r180
+// passes polygon offsets straight to WebGL, so surface overlays need this sign.
+export function surfaceDepthBias(reversedDepth=false,layer=1){
+  const offset=(reversedDepth?1:-1)*layer;return {polygonOffset:true,polygonOffsetFactor:offset,polygonOffsetUnits:offset};
+}
 export function renderPixelRatio(mode,dpr,width,height,adaptive=1){
   const native=Math.max(1,Math.min(2,Number(dpr)||1)),desired=mode==='quality'?Math.max(1.25,native):mode==='performance'?1:Math.max(.8,Math.min(native,1.35,adaptive));
   const budget=mode==='quality'?4_200_000:mode==='performance'?1_400_000:2_100_000;
