@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#172329" />
+  <meta name="description" content="Three tracks. Big jumps. One perfect run. Play Horizon Track Club, a 3D arcade stunt racer." />
+  <title>Horizon — Track Club</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23c8ff4a'/%3E%3Cpath d='M14 46 29 17h9L23 46zm18 0 15-29h7L39 46z' fill='%23172329'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="world" aria-label="3D racing track"></canvas>
+  <div class="vignette"></div>
+  <div id="loading"><span class="brand-mark">//</span><span>BUILDING YOUR NEXT ADVENTURE<span class="loading-dots">…</span></span></div>
+  <header class="topbar">
+    <a class="brand" href="#" id="brand-home" aria-label="Horizon home"><span class="brand-mark">//</span><span>HORIZON<small>TRACK CLUB</small></span></a>
+    <div class="top-location"><span class="live-dot"></span><span id="environment">ALPINE / DAYLIGHT</span><span class="location-line"></span><span class="small-text">STUNT SERIES VOL. 01</span></div>
+    <div class="top-actions">
+      <button class="icon-button" id="sound-button" aria-label="Toggle sound" title="Sound (M)"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Zm4 3c2 2 2 6 0 8m3-11c4 4 4 10 0 14"/></svg></button>
+      <button class="icon-button" id="help-button" aria-label="How to play" title="How to play"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .6-1.5 1-1.5 3m0 2.5v.2"/></svg></button>
+      <button class="icon-button hidden" id="pause-button" aria-label="Pause race" title="Pause (Esc)"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+      <button class="text-button desktop-only" id="fullscreen-button">FULLSCREEN <span>↗</span></button>
+    </div>
+  </header>
+
+  <main id="menu">
+    <div class="menu-copy">
+      <div class="eyebrow"><span class="tiny-cross">+</span> LESS LIMITS. MORE AIR.</div>
+      <h1>CHASE THE<br><span>HORIZON.</span></h1>
+      <p class="intro">Built for the thrill of the next jump.<br>Pick your track. Find your line. Send it.</p>
+      <div class="play-row"><button id="play-button" class="primary-button"><span>LET’S DRIVE</span><span class="button-arrow">↗</span></button><div class="play-caption">JUST YOU.<br>AND THE TRACK.</div></div>
+      <div class="keyboard-hint"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span><span>to drive</span><span class="hint-divider"></span><span class="key wide">SHIFT</span><span>to boost</span></div>
+    </div>
+    <div class="scene-label"><span class="live-dot"></span> THE GOOD KIND OF GETAWAY <span>↘</span></div>
+    <div class="vehicle-info"><span class="eyebrow">YOUR RIDE</span><strong>H-01 <span>CLUBSPORT</span></strong><div class="paint-options" role="group" aria-label="Car color"><button class="paint active" data-paint="#c8ff4a" style="--paint:#c8ff4a" aria-label="Lime car"></button><button class="paint" data-paint="#f47b50" style="--paint:#f47b50" aria-label="Coral car"></button><button class="paint" data-paint="#f1eee4" style="--paint:#f1eee4" aria-label="Ivory car"></button><button class="paint" data-paint="#9e93ff" style="--paint:#9e93ff" aria-label="Lilac car"></button></div></div>
+    <section class="track-picker" aria-label="Choose your track">
+      <div class="track-heading"><span>CHOOSE YOUR PLAYGROUND</span><span>03 TRACKS / ALL UNLOCKED</span></div>
+      <div id="track-options"></div>
+    </section>
+    <footer class="menu-footer"><span>NO TRAFFIC. NO LIMITS. JUST GOOD LINES.</span><span>AN ARCADE DRIVING EXPERIENCE <span class="tiny-cross">+</span></span></footer>
+  </main>
+
+  <section id="race-hud" class="hidden" aria-label="Race information">
+    <div class="race-top"><div class="time-block"><span class="eyebrow">YOUR TIME</span><strong id="race-time">00:00.00</strong><span id="best-time">SET YOUR FIRST RECORD</span></div><div class="race-track"><span id="race-track-name">SKYLINE CIRCUIT</span><span id="checkpoint-label">CHECKPOINT 0 / 3</span></div><div class="progress-block"><span class="eyebrow">TRACK PROGRESS</span><strong><span id="progress-value">0</span><small>%</small></strong><div class="progress-bar"><i id="progress-fill"></i></div></div></div>
+    <div class="minimap"><canvas id="map" width="220" height="220"></canvas><div><span id="map-track">01 / SKYLINE</span><span>FINISH ↗</span></div></div>
+    <div class="race-bottom"><div class="race-controls"><div><span class="key">R</span> RESET TO CHECKPOINT <small>+3 SEC</small></div><div><span class="key">C</span> CHANGE CAMERA <span class="key">ESC</span> PAUSE</div></div><div class="speed-cluster"><div class="air-status" id="air-status">FIND YOUR FLOW</div><div class="speed-line"><span id="gear">N</span><strong id="speed">000</strong><span>KM/H</span></div><div class="speed-ticks" id="speed-ticks"></div><div class="boost-line"><span>NITRO <small>SHIFT</small></span><div class="boost-meter"><i id="boost-fill"></i></div><span id="boost-value">100</span></div></div></div>
+    <div id="toast" role="status"></div>
+    <div id="countdown" class="hidden" aria-live="assertive">3</div>
+    <div id="touch-controls"><div class="touch-steering"><button data-control="left" aria-label="Steer left">←</button><button data-control="right" aria-label="Steer right">→</button></div><div class="touch-pedals"><button data-control="boost" class="touch-boost" aria-label="Nitro boost">N₂O</button><button data-control="brake" aria-label="Brake">BRAKE</button><button data-control="throttle" class="touch-gas" aria-label="Accelerate">GAS ↑</button></div></div>
+  </section>
+
+  <section id="pause-overlay" class="modal-overlay hidden" aria-labelledby="pause-title"><div class="modal pause-card"><div class="eyebrow">TAKE A BREATHER</div><h2 id="pause-title">NICE PIT STOP.</h2><p>Your next great jump can wait a second.</p><button id="resume-button" class="primary-button">BACK TO THE TRACK <span>↗</span></button><button id="restart-button" class="secondary-button">RESTART RACE</button><button id="exit-button" class="text-button">CHOOSE ANOTHER TRACK <span>↗</span></button></div></section>
+  <section id="finish-overlay" class="modal-overlay hidden" aria-labelledby="finish-title"><div class="modal finish-card"><div id="medal" class="medal">✦</div><div class="eyebrow" id="finish-eyebrow">THAT’S A WRAP</div><h2 id="finish-title">WHAT A RUN.</h2><div class="finish-time" id="finish-time">01:22.43</div><div class="record-label hidden" id="new-record">↗ NEW PERSONAL BEST</div><div class="finish-stats"><div><span>TOP SPEED</span><strong id="finish-speed">210 <small>KM/H</small></strong></div><div><span>JUMPS LANDED</span><strong id="finish-jumps">3</strong></div><div><span>AIR TIME</span><strong id="finish-air">4.2 <small>SEC</small></strong></div></div><button id="again-button" class="primary-button">ONE MORE RUN <span>↗</span></button><button id="next-button" class="secondary-button">NEXT TRACK →</button><button id="finish-exit-button" class="text-button">BACK TO TRACK SELECTION</button></div></section>
+  <section id="help-overlay" class="modal-overlay hidden" aria-labelledby="help-title"><div class="modal help-card"><button class="close-button" id="close-help" aria-label="Close help">×</button><div class="eyebrow">A QUICK DRIVER’S BRIEFING</div><h2 id="help-title">FIND YOUR LINE.</h2><p>Race to the finish through every checkpoint. Build speed before the striped ramps, fly across the gaps, and line up your landing.</p><div class="controls-grid"><span><b>W / ↑</b> Accelerate</span><span><b>S / ↓</b> Brake</span><span><b>A D / ← →</b> Steer</span><span><b>SHIFT</b> Nitro boost</span><span><b>SPACE</b> Tight steering</span><span><b>R</b> Checkpoint reset</span><span><b>C</b> Camera view</span><span><b>ESC / P</b> Pause</span></div><p class="help-note">Missed the landing? Press R to return to your last checkpoint (+3 seconds). Nitro recharges while you drive. On a phone, use the on-screen steering and pedals.</p><button id="got-it-button" class="primary-button">GOT IT. LET’S GO. <span>↗</span></button></div></section>
+  <div id="fatal-error" class="hidden"><h2>Let’s get you back on track.</h2><p id="error-message"></p><button onclick="location.reload()">TRY AGAIN</button></div>
+  <script type="module" src="game.js"></script>
+</body>
+</html>

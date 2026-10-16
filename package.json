@@ -1,0 +1,12 @@
+{
+  "name": "horizon-track-club",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "check": "node --check dist/game.js && node --check dist/tracks.js && node --check dist/physics.js",
+    "test": "node scripts/check-physics.mjs"
+  }
+}
