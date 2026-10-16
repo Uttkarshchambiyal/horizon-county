@@ -54,13 +54,28 @@ export function makeCourse(config) {
   function frame(s) {
     const pos=Math.max(0,Math.min(count-.00001,s/length*count));
     const i=Math.floor(pos),t=pos-i,a=samples[i],b=samples[i+1];
+    const angle=a.angle+Math.atan2(Math.sin(b.angle-a.angle),Math.cos(b.angle-a.angle))*t;
     return {...a,s,x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t,
+      angle,tx:-Math.sin(angle),tz:-Math.cos(angle),nx:Math.cos(angle),nz:-Math.sin(angle),
       slope:a.slope+(b.slope-a.slope)*t,gap:jumps.some(j=>s>=j.start&&s<j.end)};
+  }
+  // Surface detection only: this never moves or turns the car.
+  function project(x,z,nearDistance) {
+    const center=Math.floor(nearDistance/length*count);
+    let bestDistance=Infinity,bestS=nearDistance;
+    for(let i=Math.max(0,center-32);i<Math.min(count,center+33);i++) {
+      const a=samples[i],b=samples[i+1],dx=b.x-a.x,dz=b.z-a.z;
+      const t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));
+      const distance=(x-a.x-dx*t)**2+(z-a.z-dz*t)**2;
+      if(distance<bestDistance){bestDistance=distance;bestS=a.s+(b.s-a.s)*t;}
+    }
+    const f=frame(bestS);
+    return {...f,offset:(x-f.x)*f.nx+(z-f.z)*f.nz,longitudinal:(x-f.x)*f.tx+(z-f.z)*f.tz};
   }
   const checkpoints=[.25,.5,.75].map(t=>{
     let s=t*length;
     for(const jump of jumps)if(s>jump.start-40 && s<jump.end+20)s=jump.end+50;
     return s;
   });
-  return {config,length,samples,jumps,checkpoints,frame};
+  return {config,length,samples,jumps,checkpoints,frame,project};
 }

@@ -10,17 +10,17 @@ Requires Node.js 20.11 or newer. No dependency installation is needed.
 npm start
 ```
 
-Open http://127.0.0.1:4173 and select a course. Hold W or Up to accelerate, A/D or Left/Right to steer, S or Down to brake, Shift for nitro, Space for tighter steering, R to reset at the last checkpoint (+3 seconds), C to switch cameras, and Esc or P to pause. M toggles audio. Phones have on-screen steering and pedals.
+Open http://127.0.0.1:4173 and select a course. Hold W or Up to accelerate, A/D or Left/Right to steer, S or Down to brake (keep holding to reverse), Shift for nitro, Space for a tighter turn, R to reset at the last checkpoint (+3 seconds), C to switch cameras, and Esc or P to pause. M toggles audio. Phones have on-screen steering and pedals.
 
 Carry speed onto the striped jump ramps and steer to line up the landing. Pass the three checkpoints and cross the finish line. Personal bests are stored in the current browser only.
 
 ## Courses
 
-- **Skyline Circuit:** wide alpine track; 3 jumps; rookie steering assistance.
+- **Skyline Circuit:** wide alpine track; 3 jumps; wide corners for learning manual steering.
 - **Canyon Launch:** red-rock scenery and elevation changes; 4 jumps.
 - **Neon Heights:** a narrower city track at night; 5 jumps and tighter corners.
 
-The handling is arcade style: track-local motion with assisted yaw and ballistic vertical motion. It is a single-player game, with no server, account, or leaderboard service.
+The handling is fully manual arcade driving in world space, with speed-sensitive steering and ballistic vertical motion. There is no automatic acceleration, lane centering, or corner following. The car stays still until you accelerate; releasing the throttle coasts to a stop. Limited driver-controlled air steering helps line up jumps. It is a single-player game, with no server, account, or leaderboard service.
 
 ## Verification
 
@@ -29,12 +29,13 @@ npm run check
 npm test
 ```
 
-The physics checks complete each course using the same simulation as the game, land all 12 jumps, verify all checkpoints, and test steering direction, braking, boost recharge, failed jumps, and checkpoint penalties. Browser inspection verified the WebGL scene, menu, car, race display, and live gameplay in Comet on macOS. Touch controls are implemented; physical phone testing was not performed.
+The physics checks use a test-only driver to complete each course with explicit steering, land all 12 jumps, and verify all checkpoints. They also check no idle creep, no automatic turning, throttle release, reverse and reverse steering, smooth steering response, braking, boost recharge, failed jumps, and checkpoint penalties. Browser inspection verifies the WebGL scene, menu, new car, race display, W acceleration, S reverse, and D steering in Comet on macOS. Touch controls are implemented; physical phone testing was not performed.
 
 ## Files
 
 - `dist/index.html`, `dist/style.css`: interface and responsive layouts.
-- `dist/game.js`: 3D renderer, procedural car and scenery, audio, controls, and race flow.
+- `dist/game.js`: renderer, scenery, audio, controls, race flow, and interpolated rendering at a fixed 120 Hz physics step. Repeated scenery is instanced and HUD updates run at 30 Hz.
+- `dist/car.js`: curved body panels, clearcoat paint and environment reflections, detailed wheels and brake calipers, LED lights, glass, trim, and animated steering.
 - `dist/tracks.js`: editable courses, jump locations, palettes, and checkpoints.
 - `dist/physics.js`: deterministic driving and jump simulation.
 - `scripts/serve.mjs`: local static server.
