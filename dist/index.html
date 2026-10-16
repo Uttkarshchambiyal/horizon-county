@@ -1,59 +1,36 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#172329" />
-  <meta name="description" content="Three tracks. Big jumps. One perfect run. Play Horizon Track Club, a 3D arcade stunt racer." />
-  <title>Horizon — Track Club</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23c8ff4a'/%3E%3Cpath d='M14 46 29 17h9L23 46zm18 0 15-29h7L39 46z' fill='%23172329'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="style.css?v=keyboard-3" />
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#151d20">
+<meta name="description" content="Explore Horizon County: a connected 3D driving world with downtown streets, a coastal highway, beaches and mountain roads.">
+<title>Horizon County — Open World Drive</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23c8ff4a'/%3E%3Cpath d='m14 47 16-30h10L24 47zm18 0 16-30h7L39 47z' fill='%23151d20'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="world-ui.css?v=world-1">
 </head>
 <body>
-  <canvas id="world" tabindex="0" aria-label="3D racing track. Hold W to accelerate and A or D to steer."></canvas>
-  <div class="vignette"></div>
-  <div id="loading"><span class="brand-mark">//</span><span>BUILDING YOUR NEXT ADVENTURE<span class="loading-dots">…</span></span></div>
-  <header class="topbar">
-    <a class="brand" href="#" id="brand-home" aria-label="Horizon home"><span class="brand-mark">//</span><span>HORIZON<small>TRACK CLUB</small></span></a>
-    <div class="top-location"><span class="live-dot"></span><span id="environment">ALPINE / DAYLIGHT</span><span class="location-line"></span><span class="small-text">STUNT SERIES VOL. 01</span></div>
-    <div class="top-actions">
-      <button class="icon-button" id="sound-button" aria-label="Toggle sound" title="Sound (M)"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Zm4 3c2 2 2 6 0 8m3-11c4 4 4 10 0 14"/></svg></button>
-      <button class="icon-button" id="help-button" aria-label="How to play" title="How to play"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .6-1.5 1-1.5 3m0 2.5v.2"/></svg></button>
-      <button class="icon-button hidden" id="pause-button" aria-label="Pause race" title="Pause (Esc)"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
-      <button class="text-button desktop-only" id="fullscreen-button">FULLSCREEN <span>↗</span></button>
-    </div>
-  </header>
-
-  <main id="menu">
-    <div class="menu-copy">
-      <div class="eyebrow"><span class="tiny-cross">+</span> SINGLE PLAYER / MANUAL DRIVE</div>
-      <h1>CHASE THE<br><span>HORIZON.</span></h1>
-      <p class="intro">Three elevated tracks. Twelve jumps.<br>Accelerate, brake and steer with WASD.</p>
-      <div class="play-row"><button id="play-button" class="primary-button"><span>LET’S DRIVE</span><span class="button-arrow">↗</span></button><div class="play-caption">WASD.<br>YOU’RE IN CONTROL.</div></div>
-      <div class="keyboard-hint"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span><span>to drive</span><span class="hint-divider"></span><span class="key wide">SHIFT</span><span>to boost</span></div>
-    </div>
-    <div class="scene-label"><span class="live-dot"></span> H-01 / CLUBSPORT <span>↘</span></div>
-    <div class="vehicle-info"><span class="eyebrow">YOUR RIDE</span><strong>H-01 <span>CLUBSPORT</span></strong><div class="paint-options" role="group" aria-label="Car color"><button class="paint active" data-paint="#c8ff4a" style="--paint:#c8ff4a" aria-label="Lime car"></button><button class="paint" data-paint="#f47b50" style="--paint:#f47b50" aria-label="Coral car"></button><button class="paint" data-paint="#f1eee4" style="--paint:#f1eee4" aria-label="Ivory car"></button><button class="paint" data-paint="#9e93ff" style="--paint:#9e93ff" aria-label="Lilac car"></button></div></div>
-    <section class="track-picker" aria-label="Choose your track">
-      <div class="track-heading"><span>CHOOSE YOUR PLAYGROUND</span><span>03 TRACKS / ALL UNLOCKED</span></div>
-      <div id="track-options"></div>
-    </section>
-    <footer class="menu-footer"><span>MANUAL DRIVING. OPEN TRACK. NO TRAFFIC.</span><span>AN ARCADE DRIVING EXPERIENCE <span class="tiny-cross">+</span></span></footer>
-  </main>
-
-  <section id="race-hud" class="hidden" aria-label="Race information">
-    <div class="race-top"><div class="time-block"><span class="eyebrow">YOUR TIME</span><strong id="race-time">00:00.00</strong><span id="best-time">SET YOUR FIRST RECORD</span></div><div class="race-track"><span id="race-track-name">SKYLINE CIRCUIT</span><span id="checkpoint-label">CHECKPOINT 0 / 3</span></div><div class="progress-block"><span class="eyebrow">TRACK PROGRESS</span><strong><span id="progress-value">0</span><small>%</small></strong><div class="progress-bar"><i id="progress-fill"></i></div></div></div>
-    <div class="minimap"><canvas id="map" width="220" height="220"></canvas><div><span id="map-track">01 / SKYLINE</span><span>FINISH ↗</span></div></div>
-    <div class="race-bottom"><div class="race-controls"><div class="driving-keys"><span class="key" data-drive-key="throttle">W</span> GAS <span class="key" data-drive-key="left">A</span><span class="key" data-drive-key="right">D</span> STEER <span class="key" data-drive-key="brake">S</span> BRAKE / REVERSE</div><div><span class="key">R</span> RESET TO CHECKPOINT <small>+3 SEC</small></div><div><span class="key">C</span> CHANGE CAMERA <span class="key">ESC</span> PAUSE</div></div><div class="speed-cluster"><div class="steering-feedback"><span id="steering-label">HOLD W + A / D TO TURN</span><div class="steering-meter"><i id="steering-position"></i></div></div><div class="air-status" id="air-status">FIND YOUR FLOW</div><div class="speed-line"><span id="gear">N</span><strong id="speed">000</strong><span>KM/H</span></div><div class="speed-ticks" id="speed-ticks"></div><div class="boost-line"><span>NITRO <small>SHIFT</small></span><div class="boost-meter"><i id="boost-fill"></i></div><span id="boost-value">100</span></div></div></div>
-    <div id="toast" role="status"></div>
-    <div id="countdown" class="hidden" aria-live="assertive">3</div>
-    <div id="touch-controls"><div class="touch-steering"><button data-control="left" aria-label="Steer left">←</button><button data-control="right" aria-label="Steer right">→</button></div><div class="touch-pedals"><button data-control="boost" class="touch-boost" aria-label="Nitro boost">N₂O</button><button data-control="brake" aria-label="Brake or reverse">BRAKE / R</button><button data-control="throttle" class="touch-gas" aria-label="Accelerate">GAS ↑</button></div></div>
-  </section>
-
-  <section id="pause-overlay" class="modal-overlay hidden" aria-labelledby="pause-title"><div class="modal pause-card"><div class="eyebrow">RACE PAUSED</div><h2 id="pause-title">PAUSED.</h2><p>Resume your run or choose another track.</p><button id="resume-button" class="primary-button">BACK TO THE TRACK <span>↗</span></button><button id="restart-button" class="secondary-button">RESTART RACE</button><button id="exit-button" class="text-button">CHOOSE ANOTHER TRACK <span>↗</span></button></div></section>
-  <section id="finish-overlay" class="modal-overlay hidden" aria-labelledby="finish-title"><div class="modal finish-card"><div id="medal" class="medal">✦</div><div class="eyebrow" id="finish-eyebrow">FINISH LINE</div><h2 id="finish-title">RUN COMPLETE.</h2><div class="finish-time" id="finish-time">01:22.43</div><div class="record-label hidden" id="new-record">↗ NEW PERSONAL BEST</div><div class="finish-stats"><div><span>TOP SPEED</span><strong id="finish-speed">210 <small>KM/H</small></strong></div><div><span>JUMPS LANDED</span><strong id="finish-jumps">3</strong></div><div><span>AIR TIME</span><strong id="finish-air">4.2 <small>SEC</small></strong></div></div><button id="again-button" class="primary-button">ONE MORE RUN <span>↗</span></button><button id="next-button" class="secondary-button">NEXT TRACK →</button><button id="finish-exit-button" class="text-button">BACK TO TRACK SELECTION</button></div></section>
-  <section id="help-overlay" class="modal-overlay hidden" aria-labelledby="help-title"><div class="modal help-card"><button class="close-button" id="close-help" aria-label="Close help">×</button><div class="eyebrow">A QUICK DRIVER’S BRIEFING</div><h2 id="help-title">FIND YOUR LINE.</h2><p>Race to the finish through every checkpoint. Build speed before the striped ramps, fly across the gaps, and steer through the air to line up your landing.</p><div class="controls-grid"><span><b>W / ↑</b> Accelerate</span><span><b>S / ↓</b> Brake / hold to reverse</span><span><b>W + A / W + D</b> Drive and steer left / right</span><span><b>SHIFT</b> Nitro boost</span><span><b>SPACE</b> Tighter turn</span><span><b>R</b> Checkpoint reset</span><span><b>C</b> Camera view</span><span><b>ESC / P</b> Pause</span></div><p class="help-note">Missed the landing? Press R to return to your last checkpoint (+3 seconds). Hold W and A together to turn left, or W and D together to turn right. A/D steers the wheels; the car changes direction when moving. Release W to coast, or hold S to brake and reverse. Nitro recharges while you drive. On a phone, use the on-screen steering and pedals.</p><button id="got-it-button" class="primary-button">GOT IT. LET’S GO. <span>↗</span></button></div></section>
-  <div id="fatal-error" class="hidden"><h2>Let’s get you back on track.</h2><p id="error-message"></p><button onclick="location.reload()">TRY AGAIN</button></div>
-  <script type="module" src="game.js?v=keyboard-3"></script>
-</body>
-</html>
+<canvas id="world" tabindex="0" aria-label="3D open world. Hold W to drive and A or D to steer."></canvas>
+<div class="screen-shade"></div>
+<div id="loading"><b>//</b><span>HORIZON COUNTY</span><small>BUILDING YOUR WORLD</small></div>
+<header class="topbar"><a href="#" id="brand-home" class="brand"><b>//</b><span>HORIZON<small>COUNTY / FREE ROAM</small></span></a><div class="world-caption"><i></i> ONE CONNECTED WORLD <span>36+ KM OF ROADS</span></div><div class="top-actions"><button id="lighting-button" title="Change time of day">◐ <span>GOLDEN HOUR</span></button><button id="map-button" title="Map (M)">⌖ <span>MAP</span></button><button id="sound-button" title="Toggle sound (V)" aria-label="Toggle sound">♫</button><button id="help-button" aria-label="How to play">?</button><button id="pause-button" class="hidden" aria-label="Pause">Ⅱ</button></div></header>
+<main id="menu">
+  <div class="menu-copy"><div class="eyebrow"><i></i> THE OPEN ROAD EDITION</div><h1>HORIZON<br><em>COUNTY.</em></h1><p>A city to get lost in. A coast to follow.<br>Take the highway, or find your own way.</p><button class="primary" id="play-button">START DRIVING <span>↗</span></button><div class="menu-controls"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>DRIVE</span><kbd>SHIFT</kbd><span>NITRO</span></div></div>
+  <aside class="car-info"><span>YOUR RIDE</span><strong>H-01 CLUBSPORT</strong><small>ARCADE HANDLING / STREET SPEC</small><div class="paints"><button data-paint="#e58646" class="active" style="--paint:#e58646" aria-label="Copper paint"></button><button data-paint="#50818b" style="--paint:#50818b" aria-label="Ocean blue paint"></button><button data-paint="#e5e1d5" style="--paint:#e5e1d5" aria-label="Ivory paint"></button><button data-paint="#343b43" style="--paint:#343b43" aria-label="Graphite paint"></button></div></aside>
+  <section class="district-picker"><div class="section-label"><span>WHERE DO YOU WANT TO START?</span><span>ALL ROADS CONNECT</span></div><div id="spawn-options"></div></section>
+  <footer><span>ORIGINAL WORLD / BROWSER DRIVING</span><a href="stunts.html">STUNT TRACKS ↗</a></footer>
+</main>
+<section id="drive-hud" class="hidden" aria-label="Driving information">
+  <div class="location"><span id="district-label">DOWNTOWN</span><strong id="road-label">Horizon Avenue</strong><small id="mode-label">FREE ROAM / NO FINISH LINE</small></div>
+  <div class="journey"><span>YOUR DRIVE</span><strong><b id="distance-value">0.00</b> <small>KM</small></strong><span id="discovery-value">0 / 6 PLACES DISCOVERED</span></div>
+  <div class="minimap"><canvas id="minimap" width="300" height="240" aria-label="Nearby roads"></canvas><div><span id="compass-label">N ↑</span><button id="mini-map-button">M <span>OPEN MAP</span></button></div></div>
+  <div class="drive-controls"><div><kbd data-key="throttle">W</kbd> GAS <kbd data-key="left">A</kbd><kbd data-key="right">D</kbd> STEER <kbd data-key="brake">S</kbd> BRAKE / REVERSE</div><div><kbd>SPACE</kbd> HANDBRAKE <kbd>R</kbd> RECOVER <kbd>C</kbd> CAMERA <kbd>L</kbd> LIGHTS</div></div>
+  <div class="speed-cluster"><div class="steering-feedback"><span id="steering-label">W + A / D TO TURN</span><div><i id="steering-position"></i></div></div><div class="speed-line"><span id="gear">N</span><strong id="speed">000</strong><small>KM/H</small></div><div class="boost"><span>NITRO <small>SHIFT</small></span><div><i id="boost-fill"></i></div></div><span id="surface-label">ASPHALT / HEADLIGHTS OFF</span></div>
+  <div id="waypoint-hud" class="hidden">⌖ <span id="waypoint-distance"></span></div>
+  <div id="toast" role="status"></div>
+  <div id="touch-controls"><div><button data-control="left" aria-label="Steer left">←</button><button data-control="right" aria-label="Steer right">→</button></div><div><button data-control="boost" aria-label="Nitro">N₂O</button><button data-control="brake" aria-label="Brake or reverse">BRAKE</button><button data-control="throttle" aria-label="Accelerate">GAS ↑</button></div></div>
+</section>
+<section id="pause-overlay" class="overlay hidden"><div class="modal"><span class="eyebrow">HORIZON COUNTY</span><h2>PAUSED.</h2><p>The road will be here when you’re ready.</p><button id="resume-button" class="primary">KEEP DRIVING <span>↗</span></button><button id="recover-button" class="secondary">RETURN TO SAFE ROAD</button><button id="exit-button" class="text-button">CHOOSE A STARTING DISTRICT</button></div></section>
+<section id="help-overlay" class="overlay hidden"><div class="modal help-modal"><button class="close" id="close-help" aria-label="Close help">×</button><span class="eyebrow">DRIVER’S GUIDE</span><h2>YOUR WAY.</h2><p>Explore the city, coast and hills in one connected map. Take any turn, leave the road, and discover six destinations.</p><div class="controls-grid"><span><b>W / ↑</b> Accelerate</span><span><b>S / ↓</b> Brake, then reverse</span><span><b>W + A / W + D</b> Drive left / right</span><span><b>SPACE</b> Handbrake</span><span><b>SHIFT</b> Nitro</span><span><b>M</b> Full map / waypoint</span><span><b>R / C</b> Recover / camera</span><span><b>L / V</b> Lights / sound</span></div><p class="help-note">Buildings are solid. Grass and sand slow the car. Water returns you to the last safe road. Click the map to set a waypoint, or use its district buttons to travel. This is an original, compact browser driving world.</p><button id="close-help-button" class="primary">LET’S DRIVE <span>↗</span></button></div></section>
+<section id="map-overlay" class="overlay hidden"><div class="map-panel"><header><div><span class="eyebrow">EXPLORE / HORIZON COUNTY</span><h2>THE WHOLE WORLD.</h2></div><button id="close-map" class="close" aria-label="Close map">×</button></header><div class="map-layout"><canvas id="full-map" width="900" height="900" aria-label="Full world map. Click to set a waypoint."></canvas><aside><span class="eyebrow">TRAVEL TO DISTRICT</span><div id="travel-options"></div><p>Click anywhere on land to set a waypoint. All three districts share the same world.</p><button id="clear-waypoint" class="secondary">CLEAR WAYPOINT</button><div class="map-legend"><span><i class="you"></i> YOU</span><span><i class="destination"></i> DESTINATION</span><span><i class="visited"></i> DISCOVERED</span></div></aside></div><footer><span>M / ESC TO CLOSE</span><span id="map-stats"></span></footer></div></section>
+<div id="fatal-error" class="overlay hidden"><div class="modal"><h2>GRAPHICS UNAVAILABLE</h2><p id="error-message"></p><button onclick="location.reload()" class="primary">RELOAD GAME</button></div></div>
+<script type="module" src="game.js?v=world-1"></script>
+</body></html>
