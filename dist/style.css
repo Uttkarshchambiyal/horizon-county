@@ -12,3 +12,4 @@ body.racing .vignette{background:linear-gradient(180deg,rgba(7,15,19,.45),transp
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 .vehicle-info{color:#f2f4e7;text-shadow:0 1px 8px #10242b66}.vehicle-info .paint.active:after{border-color:#f2f4e7}.track-heading>span:last-child,.menu-footer>span:last-child{color:#f2f4e7;text-shadow:0 1px 6px #10242b66}.race-controls .driving-keys{margin-bottom:4px;letter-spacing:1px}.driving-keys .key:not(:first-child){margin-left:9px}
+.night{color:var(--ink);color-scheme:dark}
