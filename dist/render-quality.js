@@ -1,9 +1,31 @@
 import * as THREE from './vendor/three.module.min.js';
 
-export function renderPixelRatio(mode,dpr,width,height,adaptive=1.5){
-  const native=Math.max(1,Math.min(2,Number(dpr)||1)),desired=mode==='quality'?Math.max(1.25,native):mode==='performance'?1:Math.max(1,Math.min(native,adaptive));
-  // Clarity never undersamples CSS pixels. Bound the total framebuffer on 4K displays.
-  return Math.max(1,Math.min(desired,Math.sqrt(6_300_000/Math.max(1,width*height))));
+export function renderPixelRatio(mode,dpr,width,height,adaptive=1){
+  const native=Math.max(1,Math.min(2,Number(dpr)||1)),desired=mode==='quality'?Math.max(1.25,native):mode==='performance'?1:Math.max(.8,Math.min(native,1.35,adaptive));
+  const budget=mode==='quality'?4_200_000:mode==='performance'?1_400_000:2_100_000;
+  return Math.min(desired,Math.sqrt(budget/Math.max(1,width*height)));
+}
+// Measure delivered frames, including stalls. Hysteresis prevents quality from
+// oscillating when a laptop sits near the 16.7 ms frame budget.
+export function createFrameBudget(){
+  let elapsed=0,frames=[],cooldown=0,stable=0;
+  const status={fps:0,frameMs:0,p95:0,scale:1,tier:0,changed:false};
+  return {status,reset(){elapsed=0;frames=[];stable=0;},sample(seconds){
+    if(!Number.isFinite(seconds)||seconds<=0)return null;
+    elapsed+=seconds;frames.push(seconds*1000);if(elapsed<1)return null;
+    const sorted=frames.slice().sort((a,b)=>a-b),ms=elapsed*1000/frames.length;
+    Object.assign(status,{fps:Math.round(frames.length/elapsed),frameMs:ms,p95:sorted[Math.floor((sorted.length-1)*.95)],changed:false});
+    cooldown=Math.max(0,cooldown-elapsed);
+    if(ms>18.2){stable=0;if(!cooldown){
+      if(status.tier<2){status.tier++;status.changed=true;}
+      if(status.scale>.8){status.scale=Math.max(.8,Math.round((status.scale-.1)*10)/10);status.changed=true;}
+      cooldown=3;
+    }}else if(ms<17.2&&status.p95<20){stable+=elapsed;if(stable>15&&!cooldown){
+      if(status.tier>0){status.tier--;status.changed=true;}else if(status.scale<1){status.scale=Math.min(1,status.scale+.05);status.changed=true;}
+      stable=0;cooldown=5;
+    }}else stable=0;
+    elapsed=0;frames=[];return {...status};
+  }};
 }
 export function distanceFade(distance,range,extent=0){
   const start=range*.76,end=range+extent*.5,t=THREE.MathUtils.clamp((distance-start)/(end-start),0,1);return 1-t*t*(3-2*t);
@@ -19,9 +41,9 @@ export function enableInstanceFade(mesh){
       shader.vertexShader='#ifdef USE_INSTANCING\nattribute float instanceFade;varying float vInstanceFade;\n#endif\n'+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n#ifdef USE_INSTANCING\nvInstanceFade=instanceFade;\n#endif');
       shader.fragmentShader='#ifdef USE_INSTANCING\nvarying float vInstanceFade;\n#endif\n'+shader.fragmentShader;
-      shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\n#ifdef USE_INSTANCING\nif(vInstanceFade < fract(52.9829189*fract(dot(floor(gl_FragCoord.xy),vec2(.06711056,.00583715)))))discard;\n#endif');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\n#ifdef USE_INSTANCING\nfloat fadeNoise=fract(52.9829189*fract(dot(floor(gl_FragCoord.xy),vec2(.06711056,.00583715))));\nif(abs(vInstanceFade) < (vInstanceFade<0.?1.-fadeNoise:fadeNoise))discard;\n#endif');
     };
-    material.customProgramCacheKey=()=>key()+'-distance-fade-v1';material.needsUpdate=true;
+    material.customProgramCacheKey=()=>key()+'-distance-fade-v2';material.needsUpdate=true;
   }
   return fade;
 }

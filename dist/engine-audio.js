@@ -1,4 +1,4 @@
-import {clamp} from './world-data.js?v=clarity-5';
+import {clamp} from './world-data.js?v=smooth-6';
 
 export function engineTelemetry(state,input={}){
   const speed=Math.abs(state.speed),gear=state.speed<-.1?-1:speed<.2?0:Math.min(6,1+[15,26,37,49,61].filter(v=>speed>v).length);

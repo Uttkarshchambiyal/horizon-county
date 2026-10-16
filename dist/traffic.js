@@ -1,6 +1,6 @@
-import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=clarity-5';
-import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=clarity-5';
-import {vehicleSpec} from './vehicles.js?v=clarity-5';
+import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=smooth-6';
+import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=smooth-6';
+import {vehicleSpec} from './vehicles.js?v=smooth-6';
 
 // A small, deterministic fleet follows continuous right-hand lanes. It runs on
 // the same fixed clock as the player, so pausing freezes cars and signals.
@@ -57,7 +57,8 @@ function forwardGap(car,other){
 export function stepTraffic(traffic,world,player,dt){
   if(!traffic.enabled)return;
   traffic.time+=dt;
-  const targets=traffic.cars.map(car=>{
+  const targets=traffic.targets||(traffic.targets=new Float64Array(traffic.cars.length));
+  traffic.cars.forEach((car,index)=>{
     const route=traffic.routes[car.route];let target=car.desiredSpeed;
     // Ease down before corners, rather than snapping a fast car around them.
     const ahead=route.frame(car.s+18),bend=Math.abs(Math.atan2(Math.sin(ahead.heading-car.heading),Math.cos(ahead.heading-car.heading)));
@@ -73,12 +74,13 @@ export function stepTraffic(traffic,world,player,dt){
         }
       }
     }
-    for(const other of[...traffic.cars,player]){if(!other||other===car)continue;const gap=forwardGap(car,other);if(gap<70)target=Math.min(target,Math.sqrt(2*4*Math.max(0,gap-2)),Math.max(0,((other.speed||0)+gap-5-car.speed*.65)));}
+    for(const other of traffic.cars){if(!other||other===car)continue;const gap=forwardGap(car,other);if(gap<70)target=Math.min(target,Math.sqrt(2*4*Math.max(0,gap-2)),Math.max(0,((other.speed||0)+gap-5-car.speed*.65)));}
+    if(player){const gap=forwardGap(car,player);if(gap<70)target=Math.min(target,Math.sqrt(8*Math.max(0,gap-2)),Math.max(0,(player.speed||0)+gap-5-car.speed*.65));}
     if(car.blocked>0)target=0;
-    return Math.max(0,target);
+    targets[index]=Math.max(0,target);
   });
   traffic.cars.forEach((car,i)=>{
-    car.previous={x:car.x,y:car.y,z:car.z,heading:car.heading};
+    const previous=car.previous||(car.previous={});previous.x=car.x;previous.y=car.y;previous.z=car.z;previous.heading=car.heading;
     car.blocked=Math.max(0,car.blocked-dt);car.braking=targets[i]<car.speed-.4;
     car.speed+=clamp(targets[i]-car.speed,-6*dt,2.2*dt);
     car.s=(car.s+car.speed*dt)%traffic.routes[car.route].length;

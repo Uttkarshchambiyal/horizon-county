@@ -1,8 +1,8 @@
 import * as THREE from './vendor/three.module.min.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
 
-export {FLEET_TYPES} from './fleet-data.js?v=clarity-5';
-import {FLEET_FOOTPRINTS} from './fleet-data.js?v=clarity-5';
+export {FLEET_TYPES} from './fleet-data.js?v=smooth-6';
+import {FLEET_FOOTPRINTS} from './fleet-data.js?v=smooth-6';
 const definitions={
   hatchback:{radius:.31,wheelbase:2.42,height:1.48,cabin:[[-1.04,.82],[-.65,1.39],[.63,1.43],[1.27,.86]]},
   sedan:{radius:.34,wheelbase:2.8,height:1.45,cabin:[[-1.2,.8],[-.57,1.39],[.66,1.4],[1.46,.82]]},

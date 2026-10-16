@@ -4,9 +4,9 @@ import {HDRLoader} from './vendor/HDRLoader.js';
 // All files are local. Procedural materials remain usable while photographs
 // load, and a missing optional texture never prevents starting a drive.
 export async function loadWorldAssets(scene,renderer,view){
-  const loader=new THREE.TextureLoader(),anisotropy=Math.min(16,renderer.capabilities.getMaxAnisotropy());
+  const loader=new THREE.TextureLoader(),anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   const texture=async(file,repeat,srgb=false)=>{
-    const t=await loader.loadAsync('./assets/'+file);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(...repeat);t.anisotropy=anisotropy;if(srgb)t.colorSpace=THREE.SRGBColorSpace;return t;
+    const t=await loader.loadAsync('./assets/'+file);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(...repeat);t.anisotropy=srgb?anisotropy:Math.min(2,anisotropy);if(srgb)t.colorSpace=THREE.SRGBColorSpace;return t;
   };
   const road=async()=>{
     const maps=await Promise.all([texture('asphalt_02_diff_1k.jpg',[3,3],true),texture('asphalt_02_nor_gl_1k.jpg',[3,3]),texture('asphalt_02_rough_1k.jpg',[3,3])]);

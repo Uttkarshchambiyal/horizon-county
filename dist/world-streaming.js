@@ -1,22 +1,28 @@
 import * as THREE from './vendor/three.module.min.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
-import {enableInstanceFade,distanceFade} from './render-quality.js?v=clarity-5';
+import {enableInstanceFade,distanceFade} from './render-quality.js?v=smooth-6';
 
 // Keep shared materials in large batches. A spatial index supplies only local
 // instances to each GPU buffer; this avoids a draw call for every small sector.
 export function streamStaticWorld(root){
   const sources=[],pools=[],sectors=new Map(),staticBatches=new Map(),matrix=new THREE.Matrix4(),position=new THREE.Vector3(),scale=new THREE.Vector3(),rotation=new THREE.Quaternion();
+  const frustum=new THREE.Frustum(),projection=new THREE.Matrix4(),sphere=new THREE.Sphere(),lastRotation=new THREE.Quaternion();
   root.traverse(o=>{if(o.isMesh&&!o.material.isShaderMaterial&&!o.userData.alwaysVisible)sources.push(o);});
   for(const mesh of sources){
     if(mesh.isInstancedMesh){
       mesh.geometry.computeBoundingBox();const size=mesh.geometry.boundingBox.getSize(new THREE.Vector3()),matrices=mesh.instanceMatrix.array.slice(),colours=mesh.instanceColor?.array.slice(),cells=new Map();let maxRange=0;
       for(let i=0;i<mesh.count;i++){
         matrix.fromArray(matrices,i*16).decompose(position,rotation,scale);
-        const extent=Math.max(size.x*scale.x,size.y*scale.y,size.z*scale.z),range=mesh.userData.range||(extent>12?1900:550),cx=Math.floor(position.x/240),cz=Math.floor(position.z/240),key=cx+','+cz;
+        const extent=Math.max(size.x*scale.x,size.y*scale.y,size.z*scale.z),foliage=mesh.geometry.type==='IcosahedronGeometry',range=foliage?650:mesh.userData.range||(extent>12?1900:Math.max(180,Math.min(420,extent*45))),cx=Math.floor(position.x/240),cz=Math.floor(position.z/240),key=cx+','+cz;
         if(!cells.has(key))cells.set(key,{x:(cx+.5)*240,z:(cz+.5)*240,entries:[]});
-        cells.get(key).entries.push({index:i,x:position.x,z:position.z,range,extent});sectors.set(key,true);maxRange=Math.max(maxRange,range);
+        cells.get(key).entries.push({index:i,x:position.x,y:position.y,z:position.z,range,extent});sectors.set(key,true);maxRange=Math.max(maxRange,range);
       }
-      const fade=enableInstanceFade(mesh);mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);pools.push({mesh,matrices,colours,cells,maxRange,fade,shadow:mesh.castShadow});
+      const fade=enableInstanceFade(mesh);mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.computeBoundingSphere();mesh.matrixAutoUpdate=false;mesh.updateMatrix();
+      let distant=null;const p=mesh.geometry.parameters;let geometry;
+      if(mesh.geometry.type==='IcosahedronGeometry'&&p.detail>0)geometry=new THREE.IcosahedronGeometry(p.radius,0);
+      else if(mesh.geometry.type==='CylinderGeometry'&&p.radialSegments>8)geometry=new THREE.CylinderGeometry(p.radiusTop,p.radiusBottom,p.height,6,1,p.openEnded,p.thetaStart,p.thetaLength);
+      if(geometry){const low=new THREE.InstancedMesh(geometry,mesh.material,mesh.instanceMatrix.count);low.receiveShadow=mesh.receiveShadow;low.castShadow=false;low.matrix.copy(mesh.matrix);low.matrixAutoUpdate=false;low.boundingSphere=mesh.boundingSphere.clone();if(colours)low.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(colours.length),3);const lowFade=enableInstanceFade(low);low.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.parent.add(low);distant={mesh:low,fade:lowFade};}
+      pools.push({mesh,matrices,colours,cells,maxRange,fade,distant,shadow:mesh.castShadow});
     }else if(mesh.userData.range===2600){
       // Terrain gets coarse tiles; its local height/UV data remains unchanged.
       const geometry=mesh.geometry,p=geometry.attributes.position,parts=new Map();
@@ -41,22 +47,33 @@ export function streamStaticWorld(root){
     mesh.name=first.name;mesh.renderOrder=first.renderOrder;mesh.castShadow=first.castShadow;mesh.receiveShadow=first.receiveShadow;g.computeBoundingSphere();root.add(mesh);
     geometries.forEach(g=>g.dispose());meshes.forEach(m=>{m.removeFromParent();m.geometry.dispose();});
   }
-  let lastX=Infinity,lastZ=Infinity,lastQuality;const stats={sectors:sectors.size,visible:0,triangles:0};
-  function update(x,z,quality='auto',force=false){
-    if(!force&&Math.hypot(x-lastX,z-lastZ)<2&&quality===lastQuality)return;
-    lastX=x;lastZ=z;lastQuality=quality;stats.visible=0;stats.triangles=0;const active=new Set(),qualityRange=quality==='performance'?.72:1;
-    for(const {mesh,matrices,colours,cells,maxRange,fade,shadow} of pools){
-      let count=0,nearest=Infinity;
+  let lastX=Infinity,lastZ=Infinity,lastQuality,lastTier=-1;const stats={sectors:sectors.size,visible:0,triangles:0,uploads:0};
+  function upload(mesh,fade,count){
+    mesh.count=count;mesh.visible=count>0;
+    if(!count)return;
+    for(const [attribute,size] of[[mesh.instanceMatrix,16],[mesh.instanceColor,3],[fade,1]])if(attribute){attribute.clearUpdateRanges();attribute.addUpdateRange(0,count*size);attribute.needsUpdate=true;}
+    stats.triangles+=(mesh.geometry.index?.count||mesh.geometry.attributes.position.count)/3*count;
+  }
+  function update(x,z,quality='auto',force=false,camera=null,tier=0){
+    const turned=camera&&lastRotation.angleTo(camera.quaternion)>.06;
+    if(!force&&!turned&&Math.hypot(x-lastX,z-lastZ)<8&&quality===lastQuality&&tier===lastTier)return;
+    lastX=x;lastZ=z;lastQuality=quality;lastTier=tier;stats.visible=0;stats.triangles=0;stats.uploads++;const active=new Set(),qualityRange=(quality==='performance'?.65:quality==='quality'?1.15:1)*(tier===2?.65:tier===1?.82:1),lodRange=quality==='quality'?230:tier?100:160;
+    if(camera){camera.updateMatrixWorld();lastRotation.copy(camera.quaternion);frustum.setFromProjectionMatrix(projection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse),camera.coordinateSystem,camera.reversedDepth);}
+    for(const {mesh,matrices,colours,cells,maxRange,fade,distant,shadow} of pools){
+      let count=0,lowCount=0,nearest=Infinity;
       for(const [key,cell] of cells){
         if(Math.hypot(cell.x-x,cell.z-z)>maxRange*qualityRange+170)continue;
         for(const entry of cell.entries){
           const distance=Math.hypot(entry.x-x,entry.z-z);if(distance>entry.range*qualityRange+entry.extent/2)continue;
-          fade.array[count]=distanceFade(distance,entry.range*qualityRange,entry.extent);mesh.instanceMatrix.array.set(matrices.subarray(entry.index*16,entry.index*16+16),count*16);
-          if(colours)mesh.instanceColor.array.set(colours.subarray(entry.index*3,entry.index*3+3),count*3);count++;nearest=Math.min(nearest,distance);active.add(key);
+          // A generous margin keeps objects present during a fast camera turn.
+          if(camera){sphere.center.set(entry.x,entry.y,entry.z);sphere.radius=entry.extent*.9+35;if(!frustum.intersectsSphere(sphere))continue;}
+          const detailRange=Math.max(lodRange,entry.extent*10),blend=distant?THREE.MathUtils.smoothstep(distance,detailRange-20,detailRange+20):0,opacity=distanceFade(distance,entry.range*qualityRange,entry.extent);
+          if(blend<1){fade.array[count]=opacity*(1-blend);mesh.instanceMatrix.array.set(matrices.subarray(entry.index*16,entry.index*16+16),count*16);if(colours)mesh.instanceColor.array.set(colours.subarray(entry.index*3,entry.index*3+3),count*3);count++;}
+          if(blend>0){distant.fade.array[lowCount]=-opacity*blend;distant.mesh.instanceMatrix.array.set(matrices.subarray(entry.index*16,entry.index*16+16),lowCount*16);if(colours)distant.mesh.instanceColor.array.set(colours.subarray(entry.index*3,entry.index*3+3),lowCount*3);lowCount++;}
+          nearest=Math.min(nearest,distance);active.add(key);
         }
       }
-      fade.needsUpdate=true;mesh.count=count;mesh.visible=count>0;mesh.castShadow=shadow&&nearest<250;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;if(count)mesh.computeBoundingSphere();
-      stats.triangles+=(mesh.geometry.index?.count||mesh.geometry.attributes.position.count)/3*count;
+      upload(mesh,fade,count);mesh.castShadow=quality==='quality'&&shadow&&nearest<120;if(distant)upload(distant.mesh,distant.fade,lowCount);
     }
     stats.visible=active.size;
   }

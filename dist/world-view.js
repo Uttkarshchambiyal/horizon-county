@@ -1,8 +1,8 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=clarity-5';
-import {buildCity} from './city-view.js?v=clarity-5';
-import {buildRegions} from './region-view.js?v=clarity-5';
-import {streamStaticWorld} from './world-streaming.js?v=clarity-5';
+import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=smooth-6';
+import {buildCity} from './city-view.js?v=smooth-6';
+import {buildRegions} from './region-view.js?v=smooth-6';
+import {streamStaticWorld} from './world-streaming.js?v=smooth-6';
 
 export function buildOpenWorld(scene,world){
   const group=new THREE.Group();scene.add(group);

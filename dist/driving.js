@@ -1,5 +1,5 @@
-import {clamp} from './world-data.js?v=clarity-5';
-import {vehicleSpec} from './vehicles.js?v=clarity-5';
+import {clamp} from './world-data.js?v=smooth-6';
+import {vehicleSpec} from './vehicles.js?v=smooth-6';
 const angle=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function newDriveState(world,spawn=world.spawns[0],vehicleId='clubsport'){

@@ -1,8 +1,8 @@
 import * as THREE from './vendor/three.module.min.js';
-import {fleetModel,FLEET_TYPES} from './traffic-models.js?v=clarity-5';
-import {signalState} from './traffic.js?v=clarity-5';
-import {terrainHeight} from './world-data.js?v=clarity-5';
-import {enableInstanceFade,distanceFade} from './render-quality.js?v=clarity-5';
+import {fleetModel,FLEET_TYPES} from './traffic-models.js?v=smooth-6';
+import {signalState} from './traffic.js?v=smooth-6';
+import {terrainHeight} from './world-data.js?v=smooth-6';
+import {enableInstanceFade,distanceFade} from './render-quality.js?v=smooth-6';
 
 export function buildTrafficView(scene,world,traffic){
   const group=new THREE.Group();group.name='Local animated traffic fleet';scene.add(group);
@@ -11,10 +11,10 @@ export function buildTrafficView(scene,world,traffic){
   const object=new THREE.Object3D(),wheel=new THREE.Object3D(),color=new THREE.Color(),wheelMatrix=new THREE.Matrix4(),pools=[];
   let night=false,lastSignal='',lastNight=false,focus={x:world.spawns[0].x,z:world.spawns[0].z};
   for(const type of FLEET_TYPES){
-    const model=fleetModel(type),cars=[...traffic.cars.filter(c=>c.type===type),...parked.filter(c=>c.type===type)];
+    const model=fleetModel(type),cars=[...parked.filter(c=>c.type===type),...traffic.cars.filter(c=>c.type===type)];
     const parts=[...model.parts,...model.wheelParts.map(p=>({...p,wheel:true}))].map(part=>{
-      const mesh=new THREE.InstancedMesh(part.geometry,part.material,cars.length*(part.wheel?4:1));mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;const fade=enableInstanceFade(mesh);group.add(mesh);return {...part,mesh,fade};
-    });pools.push({cars,parts,model});
+      const mesh=new THREE.InstancedMesh(part.geometry,part.material,cars.length*(part.wheel?4:1));mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);if(part.paint||part.tail){mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(mesh.instanceMatrix.count*3).fill(1),3);mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);}mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;const fade=enableInstanceFade(mesh);group.add(mesh);return {...part,mesh,fade};
+    });pools.push({cars,parts,model,parkedCount:0});
   }
   const signals=[],posts=[],heads=[];
   for(const x of world.xs)for(const z of world.zs)for(const axis of['ns','ew'])for(const side of[-1,1]){
@@ -23,43 +23,51 @@ export function buildTrafficView(scene,world,traffic){
     const rotation=axis==='ns'?(side>0?0:Math.PI):(side>0?Math.PI/2:-Math.PI/2);
     object.position.set(px,y+4.9,pz);object.rotation.y=rotation;object.scale.set(.52,1.35,.38);object.updateMatrix();heads.push(object.matrix.clone());
     for(let j=0;j<3;j++){
-      object.position.set(px+Math.sin(rotation)*.22,y+5.3-j*.4,pz+Math.cos(rotation)*.22);object.rotation.set(0,0,0);object.scale.setScalar(1);object.updateMatrix();
+      object.position.set(px+Math.sin(rotation)*.22,y+5.3-j*.4,pz+Math.cos(rotation)*.22);object.rotation.set(0,rotation,0);object.scale.setScalar(1);object.updateMatrix();
       signals.push({matrix:object.matrix.clone(),axis,name:['red','yellow','green'][j]});
     }
   }
   const hardware=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({color:0x20282a,roughness:.7}),posts.length+heads.length);
   [...posts,...heads].forEach((m,i)=>hardware.setMatrixAt(i,m));hardware.computeBoundingSphere();group.add(hardware);
-  const bulbs=new THREE.InstancedMesh(new THREE.SphereGeometry(.13,8,6),new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false}),signals.length);
+  const bulbs=new THREE.InstancedMesh(new THREE.CircleGeometry(.13,10),new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false}),signals.length);
   signals.forEach((s,i)=>bulbs.setMatrixAt(i,s.matrix));bulbs.computeBoundingSphere();group.add(bulbs);
   const stats={moving:traffic.cars.length,parked:parked.length,models:FLEET_TYPES.length,visibleCars:0,drawCalls:pools.reduce((n,p)=>n+p.parts.length,0)};
+  let parkedX=Infinity,parkedZ=Infinity,parkedNight;
+  function writeCar(c,index,parts,model,alpha,distance){
+    const prev=c.previous||c,t=c.parked?1:alpha;
+    object.position.set(THREE.MathUtils.lerp(prev.x,c.x,t),THREE.MathUtils.lerp(prev.y,c.y,t),THREE.MathUtils.lerp(prev.z,c.z,t));
+    const heading=prev.heading+Math.atan2(Math.sin(c.heading-prev.heading),Math.cos(c.heading-prev.heading))*t;
+    if(c.pitch===undefined||Math.abs(c.renderS-c.s)>1){
+      const f=terrainHeight(c.x-Math.sin(heading)*1.4,c.z-Math.cos(heading)*1.4),b=terrainHeight(c.x+Math.sin(heading)*1.4,c.z+Math.cos(heading)*1.4);c.pitch=Math.atan2(f-b,2.8);c.renderS=c.s;
+      if(!c.parked){const route=traffic.routes[c.route],a=route.frame(c.s-1),b=route.frame(c.s+1);c.renderSteering=Math.atan(model.spec.wheelbase*Math.atan2(Math.sin(b.heading-a.heading),Math.cos(b.heading-a.heading))/2);}
+    }
+    object.rotation.set(c.pitch,heading,0,'YXZ');object.updateMatrix();
+    const fade=distanceFade(distance,c.parked?300:420);
+    for(const part of parts){
+      if(!part.wheel){part.fade.array[index]=fade;part.mesh.setMatrixAt(index,object.matrix);}
+      else model.wheels.forEach((p,i)=>{
+        part.fade.array[index*4+i]=fade;wheel.position.set(...p);wheel.rotation.set(-(c.parked?0:c.s)/model.spec.radius,i<2?c.renderSteering||0:0,0,'YXZ');wheel.updateMatrix();wheelMatrix.multiplyMatrices(object.matrix,wheel.matrix);part.mesh.setMatrixAt(index*4+i,wheelMatrix);
+      });
+      if(part.paint)part.mesh.setColorAt(index,color.set(c.paint));
+      if(part.tail)part.mesh.setColorAt(index,color.set(!c.parked&&c.braking?0xff4942:night?0xc92420:0x651b1b));
+    }
+  }
   function update(alpha=1,player){
     if(player)focus=player;stats.visibleCars=0;
-    for(const {cars,parts,model} of pools){
-      let index=0;
-      for(const c of cars){
-        const distance=Math.hypot(c.x-focus.x,c.z-focus.z);
-        if((!c.parked&&!traffic.enabled)||distance>(c.parked?300:420))continue;
-        const prev=c.previous||c,t=c.parked?1:alpha;
-        object.position.set(THREE.MathUtils.lerp(prev.x,c.x,t),THREE.MathUtils.lerp(prev.y,c.y,t),THREE.MathUtils.lerp(prev.z,c.z,t));
-        const heading=prev.heading+Math.atan2(Math.sin(c.heading-prev.heading),Math.cos(c.heading-prev.heading))*t;
-        // Cache slope at simulation resolution; parked transforms never sample terrain per frame.
-        if(c.renderS!==c.s||c.pitch===undefined){const f=terrainHeight(c.x-Math.sin(heading)*1.4,c.z-Math.cos(heading)*1.4),b=terrainHeight(c.x+Math.sin(heading)*1.4,c.z+Math.cos(heading)*1.4);c.pitch=Math.atan2(f-b,2.8);c.renderS=c.s;}
-        object.rotation.set(c.pitch,heading,0,'YXZ');object.updateMatrix();
-        let steering=0;
-        if(!c.parked){const route=traffic.routes[c.route],a=route.frame(c.s-1),b=route.frame(c.s+1);steering=Math.atan(model.spec.wheelbase*Math.atan2(Math.sin(b.heading-a.heading),Math.cos(b.heading-a.heading))/2);}
-        for(const part of parts){
-          part.mesh.castShadow=true;const fade=distanceFade(distance,c.parked?300:420);if(!part.wheel)part.fade.array[index]=fade;else for(let i=0;i<4;i++)part.fade.array[index*4+i]=fade;
-          if(!part.wheel)part.mesh.setMatrixAt(index,object.matrix);
-          else model.wheels.forEach((p,i)=>{
-            wheel.position.set(...p);wheel.rotation.set(-(c.parked?0:c.s)/model.spec.radius,i<2?steering:0,0,'YXZ');wheel.updateMatrix();wheelMatrix.multiplyMatrices(object.matrix,wheel.matrix);part.mesh.setMatrixAt(index*4+i,wheelMatrix);
-          });
-          if(part.paint)part.mesh.setColorAt(index,color.set(c.paint));
-          if(part.tail)part.mesh.setColorAt(index,color.set(!c.parked&&c.braking?0xff4942:night?0xc92420:0x651b1b));
-        }
-        index++;
-      }
+    const refreshParked=Math.hypot(focus.x-parkedX,focus.z-parkedZ)>8||parkedNight!==night;
+    if(refreshParked){parkedX=focus.x;parkedZ=focus.z;parkedNight=night;}
+    for(const pool of pools){
+      const {cars,parts,model}=pool;let index=refreshParked?0:pool.parkedCount;
+      if(refreshParked){for(const c of cars){if(!c.parked)continue;const distance=Math.hypot(c.x-focus.x,c.z-focus.z);if(distance<=300)writeCar(c,index++,parts,model,1,distance);}pool.parkedCount=index;}
+      if(traffic.enabled)for(const c of cars){if(c.parked)continue;const distance=Math.hypot(c.x-focus.x,c.z-focus.z);if(distance<=420)writeCar(c,index++,parts,model,alpha,distance);}
       stats.visibleCars+=index;
-      for(const part of parts){part.fade.needsUpdate=true;part.mesh.count=index*(part.wheel?4:1);part.mesh.instanceMatrix.needsUpdate=true;if(part.mesh.instanceColor)part.mesh.instanceColor.needsUpdate=true;}
+      for(const part of parts){
+        const multiplier=part.wheel?4:1,start=refreshParked?0:pool.parkedCount*multiplier,count=index*multiplier;
+        part.mesh.count=count;part.mesh.visible=count>0;
+        // Parked matrices stay in the buffer prefix. Only moving vehicles are
+        // uploaded on an ordinary frame; empty/static pools upload nothing.
+        if(count>start)for(const [attribute,size] of[[part.mesh.instanceMatrix,16],[part.mesh.instanceColor,3],[part.fade,1]])if(attribute){attribute.clearUpdateRanges();attribute.addUpdateRange(start*size,(count-start)*size);attribute.needsUpdate=true;}
+      }
     }
     const phase=signalState(traffic.time,'ns')+signalState(traffic.time,'ew');
     if(phase!==lastSignal||night!==lastNight){

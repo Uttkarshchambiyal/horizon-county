@@ -8,7 +8,7 @@ import {makeTraffic,stepTraffic,collideTraffic} from '../dist/traffic.js';
 import {buildTrafficView} from '../dist/traffic-view.js';
 import {animateVehicle} from '../dist/vehicle-motion.js';
 import {createEngineAudio,engineTelemetry} from '../dist/engine-audio.js';
-import {renderPixelRatio,stabilizeSun} from '../dist/render-quality.js';
+import {renderPixelRatio,createFrameBudget,stabilizeSun} from '../dist/render-quality.js';
 import {createDrivingControls} from '../dist/controls.js';
 import {makeOpenWorld,terrainHeight,coast,clamp} from '../dist/world-data.js';
 import {buildOpenWorld} from '../dist/world-view.js';
@@ -30,18 +30,19 @@ globalThis.document={body:new Element(),activeElement:null,createElement:()=>new
 globalThis.window={addEventListener:(name,fn)=>{if(!listeners.has(name))listeners.set(name,[]);listeners.get(name).push(fn);}};
 globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.devicePixelRatio=1;globalThis.innerWidth=1440;globalThis.innerHeight=900;
 let callback;globalThis.requestAnimationFrame=fn=>callback=fn;
-class Renderer{constructor(){this.shadowMap={};this.info={render:{}};}setPixelRatio(){}setSize(){}render(){}}
+let renders=0;class Renderer{constructor(){this.shadowMap={};this.info={render:{}};}setPixelRatio(value){this.pixelRatio=value;}getPixelRatio(){return this.pixelRatio;}setSize(){}render(){renders++;}}
 const source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-const dependencies={renderPixelRatio,stabilizeSun,animateVehicle,createEngineAudio,engineTelemetry,THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadSportsCar:async v=>{v.assetReady=true;return v;},loadWorldAssets:async()=>({loaded:3,total:3})};
+const dependencies={renderPixelRatio,createFrameBudget,stabilizeSun,animateVehicle,createEngineAudio,engineTelemetry,THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadSportsCar:async v=>{v.assetReady=true;return v;},loadWorldAssets:async()=>({loaded:3,total:3})};
 new Function(...Object.keys(dependencies),source)(...Object.values(dependencies));
+await new Promise(resolve=>setImmediate(resolve));
 const key=(code,key,up=false)=>{for(const fn of listeners.get(up?'keyup':'keydown')||[])fn({code,key,preventDefault(){}});};
 let timestamp=1000;function frames(n){for(let i=0;i<n;i++){timestamp+=1000/60;callback(timestamp);}}
 assert.equal(window.horizon.getState().mode,'menu');
 for(const [letter,sign] of [['a',-1],['d',1]]){
   ids.get('play-button').listeners.click();assert.equal(document.activeElement,ids.get('world'));
-  const x=window.horizon.getState().x;key('KeyW','w');key('Key'+letter.toUpperCase(),letter);frames(60);
+  const x=window.horizon.getState().x;key('KeyW','w');key('Key'+letter.toUpperCase(),letter);const beforeRenders=renders;frames(62);assert.ok(renders>beforeRenders,'The ready game must actually request rendering');
   assert.ok((window.horizon.getState().x-x)*sign>1,'Entrypoint W + '+letter+' must steer');
-  assert.equal(window.horizon.getInput().steer,sign);assert.ok(ids.get('steering-label').textContent.includes(sign<0?'LEFT':'RIGHT'));
+  assert.equal(window.horizon.getInput().steer,sign);assert.ok(window.horizon.getState().fps>=59&&window.horizon.getState().fps<=61);assert.ok(ids.get('live-fps').textContent.includes('FPS'));assert.ok(ids.get('steering-label').textContent.includes(sign<0?'LEFT':'RIGHT'));
   key('KeyW','w',true);key('Key'+letter.toUpperCase(),letter,true);
 }
 key('KeyM','m');assert.equal(window.horizon.getState().mode,'map');assert.equal(ids.get('map-overlay').classList.contains('hidden'),false);
@@ -55,8 +56,8 @@ ids.get('lighting-button').listeners.click();ids.get('lighting-button').listener
 const before=window.horizon.getState();key('KeyG','g');assert.equal(window.horizon.getState().mode,'garage');frames(30);assert.equal(window.horizon.getState().trafficTime,before.trafficTime);
 document.querySelectorAll('[data-vehicle]')[2].listeners.click();assert.equal(window.horizon.getState().vehicle,'trail');assert.equal(window.horizon.getState().speed,0);
 ids.get('use-car').listeners.click();assert.equal(window.horizon.getState().mode,'playing');
-key('KeyO','o');assert.equal(window.horizon.getState().mode,'settings');
-assert.equal(window.horizon.getState().quality,'quality');assert.ok(window.horizon.getState().pixelRatio>=1.25);ids.get('quality-toggle').listeners.click();assert.equal(window.horizon.getState().quality,'auto');ids.get('quality-toggle').listeners.click();assert.equal(window.horizon.getState().quality,'performance');
+key('KeyO','o');assert.equal(window.horizon.getState().mode,'settings');frames(2);const frozenRenders=renders;frames(60);assert.equal(renders,frozenRenders,'Paused settings should not continually render the world');
+assert.equal(window.horizon.getState().quality,'auto');assert.equal(window.horizon.getState().pixelRatio,1);ids.get('quality-toggle').listeners.click();assert.equal(window.horizon.getState().quality,'performance');ids.get('quality-toggle').listeners.click();assert.equal(window.horizon.getState().quality,'quality');ids.get('quality-toggle').listeners.click();assert.equal(window.horizon.getState().quality,'auto');
 ids.get('traffic-toggle').listeners.click();assert.equal(window.horizon.getState().traffic,false);ids.get('close-settings-button').listeners.click();const stopped=window.horizon.getState();frames(60);assert.equal(window.horizon.getState().speed,0);assert.equal(window.horizon.getState().trafficTime,stopped.trafficTime);
 key('KeyO','o');ids.get('traffic-toggle').listeners.click();key('Escape','Escape');frames(30);assert.ok(window.horizon.getState().trafficTime>stopped.trafficTime);
 console.log('PASS Garage: car switching stops the car; graphics/traffic settings; simulation freezes in overlays; no idle movement');

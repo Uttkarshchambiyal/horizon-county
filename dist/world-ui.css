@@ -21,3 +21,5 @@
 #rpm-value{display:block;text-align:right;color:var(--acid);font-size:8px;letter-spacing:1.5px;margin-top:11px}@media(max-width:700px){#rpm-value{font-size:6px;margin-top:8px}}
 
 #camera-view-button{pointer-events:auto;position:absolute;right:0;top:-28px;border:1px solid #ffffff55;border-radius:3px;background:#17242a88;padding:5px 8px;font-size:7px;letter-spacing:1px;color:var(--paper)}
+
+.location .live-fps{display:block;width:max-content;margin-top:12px;padding:5px 7px;border:1px solid #c8ff4a35;background:#17242a80;color:var(--acid);font-size:9px;letter-spacing:1px;font-variant-numeric:tabular-nums}.location .live-fps[data-slow=true]{color:#ffcb8d;border-color:#ffcb8d55}
