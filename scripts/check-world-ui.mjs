@@ -6,6 +6,8 @@ import * as THREE from '../dist/vendor/three.module.min.js';
 import {VEHICLES,vehicleSpec,createVehicle} from '../dist/vehicles.js';
 import {makeTraffic,stepTraffic,collideTraffic} from '../dist/traffic.js';
 import {buildTrafficView} from '../dist/traffic-view.js';
+import {animateVehicle} from '../dist/vehicle-motion.js';
+import {createEngineAudio,engineTelemetry} from '../dist/engine-audio.js';
 import {createDrivingControls} from '../dist/controls.js';
 import {makeOpenWorld,terrainHeight,coast,clamp} from '../dist/world-data.js';
 import {buildOpenWorld} from '../dist/world-view.js';
@@ -29,7 +31,7 @@ globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.devicePixelRat
 let callback;globalThis.requestAnimationFrame=fn=>callback=fn;
 class Renderer{constructor(){this.shadowMap={};this.info={render:{}};}setPixelRatio(){}setSize(){}render(){}}
 const source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-const dependencies={THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadSportsCar:async v=>{v.assetReady=true;return v;},loadWorldAssets:async()=>({loaded:3,total:3})};
+const dependencies={animateVehicle,createEngineAudio,engineTelemetry,THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadSportsCar:async v=>{v.assetReady=true;return v;},loadWorldAssets:async()=>({loaded:3,total:3})};
 new Function(...Object.keys(dependencies),source)(...Object.values(dependencies));
 const key=(code,key,up=false)=>{for(const fn of listeners.get(up?'keyup':'keydown')||[])fn({code,key,preventDefault(){}});};
 let timestamp=1000;function frames(n){for(let i=0;i<n;i++){timestamp+=1000/60;callback(timestamp);}}

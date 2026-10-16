@@ -1,5 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
 import {terrainHeight,seeded} from './world-data.js';
+import {createFacadeLibrary} from './facade-materials.js';
 
 // Street-front architecture has separate silhouettes and human-scale floors.
 // Static faces are merged by material; repeated trim and furniture is instanced.
@@ -22,28 +23,9 @@ export function buildCity(scene,world){
   function face(w,h,m,x,y,z,rotation=0){
     if(!faces.has(m))faces.set(m,{p:[],n:[],uv:[],i:[]});const f=faces.get(m),base=f.p.length/3,c=Math.cos(rotation),s=Math.sin(rotation);
     for(const [dx,dy] of[[-w/2,-h/2],[w/2,-h/2],[-w/2,h/2],[w/2,h/2]]){f.p.push(x+dx*c,y+dy,z-dx*s);f.n.push(s,0,c);}
-    f.uv.push(0,0,w/3.3,0,0,h/3.5,w/3.3,h/3.5);f.i.push(base,base+1,base+2,base+1,base+3,base+2);
+    const [cellW,cellH]=m.userData?.facadeCell||[3.3,3.5];f.uv.push(0,0,w/cellW,0,0,h/cellH,w/cellW,h/cellH);f.i.push(base,base+1,base+2,base+1,base+3,base+2);
   }
-  function facade(wall,kind){
-    const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d');ctx.fillStyle=wall;ctx.fillRect(0,0,256,256);
-    if(kind==='brick'){for(let y=0;y<256;y+=14){ctx.fillStyle='#ac8a7340';ctx.fillRect(0,y,256,2);for(let x=(y/14%2)*20;x<256;x+=40)ctx.fillRect(x,y,2,14);}}
-    if(kind==='glass'){
-      const gradient=ctx.createLinearGradient(0,0,256,256);gradient.addColorStop(0,'#879fa8');gradient.addColorStop(.48,'#526f82');gradient.addColorStop(1,'#384e62');ctx.fillStyle=gradient;ctx.fillRect(5,4,246,248);
-      ctx.fillStyle='#b1beb9';ctx.fillRect(0,0,4,256);ctx.fillRect(0,248,256,6);ctx.fillStyle='#1f3c4a';ctx.fillRect(123,0,3,256);
-    }else if(kind==='deco'){
-      ctx.fillStyle='#a49b87';ctx.fillRect(92,24,73,204);ctx.fillStyle='#354e5b';ctx.fillRect(98,29,61,194);ctx.fillStyle='#d8d0b7';ctx.fillRect(126,29,4,194);ctx.fillRect(98,102,61,4);ctx.fillRect(98,167,61,4);
-    }else if(kind==='house'){
-      ctx.fillStyle='#e6e0cb';ctx.fillRect(37,62,184,134);ctx.fillStyle='#486572';ctx.fillRect(44,68,170,120);ctx.fillStyle='#e6e0cb';ctx.fillRect(126,68,6,120);ctx.fillRect(44,124,170,5);ctx.fillStyle='#59756d';ctx.fillRect(21,62,11,134);ctx.fillRect(227,62,11,134);
-    }else{
-      ctx.fillStyle='#716d62';ctx.fillRect(43,38,171,169);ctx.fillStyle='#d8d3c6';ctx.fillRect(47,36,161,166);
-      const g=ctx.createLinearGradient(55,50,200,193);g.addColorStop(0,'#486371');g.addColorStop(.6,'#2d424c');g.addColorStop(1,'#627c87');ctx.fillStyle=g;ctx.fillRect(53,44,149,149);
-      ctx.fillStyle='#e0d8c3';ctx.fillRect(125,44,5,149);ctx.fillRect(53,122,149,4);ctx.fillRect(37,202,183,8);
-      ctx.fillStyle='#adac9875';ctx.fillRect(55,46,146,28);
-    }
-    const texture=new THREE.CanvasTexture(canvas);texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;
-    return new THREE.MeshStandardMaterial({map:texture,roughness:kind==='glass'?.3:.85,metalness:kind==='glass'?.35:0});
-  }
-  const facades=[facade('#d6ccbb','stucco'),facade('#a47861','brick'),facade('#b7c4c2','stucco'),facade('#7b8a91','glass'),facade('#ced4c9','glass'),facade('#cfb8a0','stucco'),facade('#c7c1ae','deco'),facade('#d1c3ab','house')];
+  const facades=createFacadeLibrary();
   const shops=['PACIFIC COFFEE','HORIZON MARKET','COAST AUTO','SUNSET RECORDS','NORTH STAR HOTEL','MARINA SUPPLY','BOARDWALK SURF','CRESCENT CINEMA','CITY PHARMACY','WESTSIDE DINER','MONARCH STUDIOS','EVERGREEN BANK'];
   const signMaterials=shops.map((text,i)=>{
     const c=document.createElement('canvas');c.width=512;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle=['#315557','#945b47','#293d4f','#55634c'][i%4];ctx.fillRect(0,0,512,96);ctx.strokeStyle='#d6d2b4';ctx.lineWidth=3;ctx.strokeRect(9,8,494,80);ctx.fillStyle='#eae5ce';ctx.font='600 34px sans-serif';ctx.textAlign='center';ctx.fillText(text,256,61);const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;return new THREE.MeshStandardMaterial({map:texture,roughness:.75});
@@ -60,12 +42,12 @@ export function buildCity(scene,world){
     const F=(fw,fh,m,x,y,z,rot=0)=>{const p=pos(x,z);face(fw,fh,m,p[0],b.y+y,p[1],r+rot);};
     const C=(rad,ch,m,x,y,z)=>{const p=pos(x,z);column(rad,ch,m,p[0],b.y+y,p[1]);};
     function skin(bw,bh,bd,y,material){for(const side of[-1,1]){F(bw,bh,material,0,y,side*(bd/2+.025),side>0?0:Math.PI);F(bd,bh,material,side*(bw/2+.025),y,0,side*Math.PI/2);}}
-    const windowMat=facades[type==='glass'||type==='round'?3+b.style%2:type==='artdeco'||type==='civic'?6:type==='house'||type==='villa'?7:type==='loft'?1:b.style%3===0?5:b.style%3];
+    const windowMat=facades.get(type==='glass'||type==='round'?3+b.style%2:type==='artdeco'||type==='civic'?6:type==='house'||type==='villa'?7:type==='loft'?1:b.style%3===0?5:b.style%3,b.id%3);
     B(w+4,.12,d+4,concrete,0,.09,0);
     const minY=Math.min(...[-1,1].flatMap(s=>[-1,1].map(t=>terrainHeight(b.x+s*b.w/2,b.z+t*b.d/2))));
     B(w,Math.max(.5,b.y-minY+1),d,stone,0,-Math.max(.5,b.y-minY+1)/2+.2,0);
     if(type==='round'){
-      const curved=cylinder.clone(),uv=curved.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*Math.PI*w*.94/3.3,uv.getY(i)*h/3.5);put(curved,facades[3],b.x,b.y+h/2,b.z,w*.47,h,w*.47);for(let y=4;y<h;y+=7)C(w*.48,.25,white,0,y,0);C(w*.39,4,concrete,0,h+2,0);C(.7,14,dark,0,h+9,0);
+      const curved=cylinder.clone(),uv=curved.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*Math.PI*w*.94/13.2,uv.getY(i)*h/14);put(curved,facades.get(3,b.id%3),b.x,b.y+h/2,b.z,w*.47,h,w*.47);for(let y=4;y<h;y+=7)C(w*.48,.25,white,0,y,0);C(w*.39,4,concrete,0,h+2,0);C(.7,14,dark,0,h+9,0);
     }else if(type==='setback'||type==='artdeco'){
       const tiers=type==='artdeco'?3:2;
       for(let i=0;i<tiers;i++){const bw=w*(1-i*.17),bd=d*(1-i*.17),bh=h/tiers,y=(i+.5)*bh;B(bw,bh,bd,type==='artdeco'?stone:paint,0,y,0);skin(bw,bh-.6,bd,y,windowMat);B(bw+1,.6,bd+1,white,0,(i+1)*bh,0);}
@@ -137,5 +119,5 @@ export function buildCity(scene,world){
   }
   for(const [geometry,byMaterial] of batches)for(const [material,matrices] of byMaterial){const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.castShadow=![glass,water,grass,asphalt].includes(material);mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);}
   for(const [material,f] of faces){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(f.p,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(f.n,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(f.uv,2));geometry.setIndex(f.i);geometry.computeBoundingSphere();const mesh=new THREE.Mesh(geometry,material);mesh.receiveShadow=true;group.add(mesh);}
-  return {group,stats:{buildings:world.buildings.length,types:new Set(world.buildings.map(b=>b.type)).size,balconies,streetTrees,props,blocks:world.blocks.length}};
+  return {group,facades,stats:{buildings:world.buildings.length,types:new Set(world.buildings.map(b=>b.type)).size,balconies,streetTrees,props,blocks:world.blocks.length,facadeVariants:facades.count}};
 }

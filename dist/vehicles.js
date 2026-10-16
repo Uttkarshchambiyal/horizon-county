@@ -1,8 +1,8 @@
 import * as THREE from './vendor/three.module.min.js';
 export const VEHICLES=[
-  {id:'clubsport',name:'Ferrari 458 Italia',className:'ITALIAN SPORTS CAR',description:'Sculpted bodywork, a detailed cockpit and five-spoke alloy wheels.',color:0xcb2527,length:4.53,width:1.94,radius:.36,wheelbase:2.65,roof:.69,top:58,boostTop:77,accel:14.5,brake:32,turn:.94,grip:17,offRoad:25},
-  {id:'touring',name:'T-04 Meridian',className:'TOURING SEDAN',description:'A composed daily driver with a longer wheelbase.',color:0x557d89,length:5.1,width:2.08,radius:.46,wheelbase:3.08,roof:1.23,top:53,boostTop:69,accel:12,brake:31,turn:.83,grip:19,offRoad:29},
-  {id:'trail',name:'R-09 Summit',className:'ALL-TERRAIN SUV',description:'Raised ride height. More grip on dirt and hillside roads.',color:0x778077,length:5.15,width:2.26,radius:.51,wheelbase:3.12,roof:1.70,top:46,boostTop:60,accel:10,brake:29,turn:.72,grip:16,offRoad:39}
+  {id:'clubsport',name:'Ferrari 458 Italia',className:'ITALIAN SPORTS CAR',description:'Sculpted bodywork, a detailed cockpit and five-spoke alloy wheels.',color:0xcb2527,length:4.53,width:1.94,radius:.36,wheelbase:2.65,roof:.69,top:58,boostTop:77,accel:9.5,brake:32,turn:.94,grip:17,offRoad:25},
+  {id:'touring',name:'T-04 Meridian',className:'TOURING SEDAN',description:'A composed daily driver with a longer wheelbase.',color:0x557d89,length:5.1,width:2.08,radius:.46,wheelbase:3.08,roof:1.23,top:53,boostTop:69,accel:8.5,brake:31,turn:.83,grip:19,offRoad:29},
+  {id:'trail',name:'R-09 Summit',className:'ALL-TERRAIN SUV',description:'Raised ride height. More grip on dirt and hillside roads.',color:0x778077,length:5.15,width:2.26,radius:.51,wheelbase:3.12,roof:1.70,top:46,boostTop:60,accel:7.5,brake:29,turn:.72,grip:16,offRoad:39}
 ];
 export const vehicleSpec=id=>VEHICLES.find(v=>v.id===id)||VEHICLES[0];
 export function createVehicle(parent,id='clubsport',{detail=true}={}){
@@ -109,6 +109,7 @@ export function createVehicle(parent,id='clubsport',{detail=true}={}){
   const parents=[];root.traverse(o=>{if(o.isGroup)parents.push(o);});
   for(const p of parents){const groups=new Map();for(const c of p.children)if(c.geometry===unit){if(!groups.has(c.material))groups.set(c.material,[]);groups.get(c.material).push(c);}
     for(const [m,objects] of groups)if(objects.length>2){const batch=new THREE.InstancedMesh(unit,m,objects.length);objects.forEach((o,i)=>{batch.setMatrixAt(i,o.matrix);p.remove(o);});batch.castShadow=true;batch.receiveShadow=true;batch.computeBoundingSphere();p.add(batch);}}
+  const bodyPivot=new THREE.Group();for(const c of [...root.children])if(!wheelCenters.includes(c)&&!flames.includes(c))bodyPivot.add(c);root.add(bodyPivot);
   parent.add(root);
-  return {car:root,spec,bodyMat:paint,tailMat:tail,wheels,steerWheels,flames,wheelCenters};
+  return {car:root,spec,bodyPivot,bodyMat:paint,tailMat:tail,wheels,steerWheels,flames,wheelCenters};
 }

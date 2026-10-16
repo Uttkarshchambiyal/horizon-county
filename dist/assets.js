@@ -20,6 +20,29 @@ export async function loadWorldAssets(scene,renderer,view){
     const hdr=await new HDRLoader().loadAsync('./assets/kloppenheim_06_puresky_1k.hdr'),generator=new THREE.PMREMGenerator(renderer),environment=generator.fromEquirectangular(hdr),old=scene.environment;
     scene.environment=environment.texture;hdr.dispose();generator.dispose();if(old)old.dispose();
   };
-  const results=await Promise.allSettled([road(),ground(),environment()]);
-  return {loaded:results.filter(r=>r.status==='fulfilled').length,total:3};
+  const facades=async()=>{
+    const names=['brick','plaster','concrete'],images=await Promise.all(names.map(name=>new THREE.ImageLoader().loadAsync('./assets/materials/'+name+'.jpg')));
+    view.city.facades.applyPhotos(Object.fromEntries(names.map((name,i)=>[name,images[i]])));
+  };
+  const regions=async()=>{
+    const [sand,rock]=await Promise.all([texture('materials/sand.jpg',[1,1],true),texture('materials/rock.jpg',[1,1],true)]);
+    view.regions.rockMaterial.map=rock;view.regions.rockMaterial.needsUpdate=true;
+    // Blend by world position so the whole shoreline receives sand rather
+    // than stretching a city-ground photograph across beach and mountains.
+    const m=view.surfaces.terrain;
+    m.onBeforeCompile=shader=>{
+      shader.uniforms.shoreSand={value:sand};shader.uniforms.ridgeRock={value:rock};
+      shader.vertexShader='varying vec3 vRegionPosition;\n'+shader.vertexShader;
+      shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','vRegionPosition=(modelMatrix*vec4(transformed,1.)).xyz;\n#include <project_vertex>');
+      shader.fragmentShader='varying vec3 vRegionPosition;uniform sampler2D shoreSand;uniform sampler2D ridgeRock;\n'+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+        float shoreline=-1110.+65.*sin(vRegionPosition.z*.002)+28.*sin(vRegionPosition.z*.006);
+        float beach=1.-smoothstep(115.,190.,vRegionPosition.x-shoreline);
+        float ridge=smoothstep(45.,110.,vRegionPosition.y)*(1.-beach)*(.55+.22*sin(vRegionPosition.x*.025)*sin(vRegionPosition.z*.019));
+        diffuseColor.rgb=mix(diffuseColor.rgb,texture2D(shoreSand,vRegionPosition.xz*.16).rgb,beach);
+        diffuseColor.rgb=mix(diffuseColor.rgb,texture2D(ridgeRock,vRegionPosition.xz*.12).rgb,ridge);`);
+    };m.customProgramCacheKey=()=> 'horizon-regional-ground-v1';m.needsUpdate=true;
+  };
+  const results=await Promise.allSettled([road(),ground(),environment(),facades(),regions()]);
+  return {loaded:results.filter(r=>r.status==='fulfilled').length,total:results.length};
 }

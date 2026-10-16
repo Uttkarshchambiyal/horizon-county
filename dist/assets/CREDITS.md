@@ -19,3 +19,16 @@ original code-generated designs. The interface car silhouettes are illustrations
 The Ferrari 458 Italia by vicent091036 is CC BY 4.0; see cars/ATTRIBUTION.md.
 
 Three.js and its loaders are MIT licensed; see ../vendor/THREE-LICENSE.txt.
+
+Additional CC0 photographs from Poly Haven:
+
+- Brick Wall 001 — https://polyhaven.com/a/brick_wall_001
+- White Plaster Rough 02 — https://polyhaven.com/a/white_plaster_rough_02
+- Concrete Wall 001 — https://polyhaven.com/a/concrete_wall_001
+- Aerial Beach 01 — https://polyhaven.com/a/aerial_beach_01
+- Rock Boulder Dry — https://polyhaven.com/a/rock_boulder_dry
+
+Wall photographs are composited into varied facade atlases with separate
+roughness, relief and window-light masks. Sand and rock are blended into the
+terrain by world position. The recorded engine loop is credited separately
+in audio/CREDITS.md.

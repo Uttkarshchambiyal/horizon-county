@@ -1,6 +1,7 @@
 import * as THREE from './vendor/three.module.min.js';
 import {terrainHeight,coast,seeded,BOUNDS} from './world-data.js';
 import {buildCity} from './city-view.js';
+import {buildRegions} from './region-view.js';
 
 export function buildOpenWorld(scene,world){
   const group=new THREE.Group();scene.add(group);
@@ -79,7 +80,7 @@ export function buildOpenWorld(scene,world){
       addBox(3.2,.025,1.35,white,x+side*20,terrainHeight(x,z)+.14,z+i*2.1);
     }
   }
-  const city=buildCity(group,world);
+  const city=buildCity(group,world),regions=buildRegions(group,world);
   // A beach boardwalk, long pier and a small marina give the coast a destination.
   addBox(8,.35,1150,wood,-1040,1.3,280);
   addBox(145,.6,16,wood,-1088,1.7,320);
@@ -112,5 +113,5 @@ export function buildOpenWorld(scene,world){
   // Atmosphere uses a large gradient dome; distant terrain fades into the sky.
   const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,32,20),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{top:{value:new THREE.Color(0x6da2c6)},bottom:{value:new THREE.Color(0xe1d9be)}},vertexShader:'varying float h;void main(){h=normalize(position).y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying float h;uniform vec3 top;uniform vec3 bottom;void main(){gl_FragColor=vec4(mix(bottom,top,pow(max(0.,h),.65)),1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));group.add(sky);
   const sunDisk=new THREE.Mesh(new THREE.SphereGeometry(65,24,16),new THREE.MeshBasicMaterial({color:0xffe8b1}));sunDisk.position.set(-1800,1600,-3500);group.add(sunDisk);
-  return {group,cityStats:city.stats,surfaces:{asphalt,terrain:terrain.material,sizeX,sizeZ},setSky(top,bottom){sky.material.uniforms.top.value.set(top);sky.material.uniforms.bottom.value.set(bottom);waterMaterial.uniforms.sky.value.set(bottom);},update(time){waterMaterial.uniforms.time.value=time;},stats:{buildings:world.buildings.length,roadKm:world.roads.reduce((s,r)=>s+r.length,0)/1000,palms:palms.length}};
+  return {group,city,regions,regionStats:regions.stats,cityStats:city.stats,surfaces:{asphalt,terrain:terrain.material,sizeX,sizeZ},setSky(top,bottom){sky.material.uniforms.top.value.set(top);sky.material.uniforms.bottom.value.set(bottom);waterMaterial.uniforms.sky.value.set(bottom);},update(time){waterMaterial.uniforms.time.value=time;},stats:{buildings:world.buildings.length,roadKm:world.roads.reduce((s,r)=>s+r.length,0)/1000,palms:palms.length}};
 }

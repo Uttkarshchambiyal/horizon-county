@@ -27,7 +27,8 @@ for(const road of w.roads.filter(r=>['coast','ridge','avenue0','street320'].incl
     for(let d=Math.max(0,progress-4);d<Math.min(road.length,progress+30);d+=2){const p=road.frame(d),dist=Math.hypot(p.x-s.x,p.z-s.z);if(dist<best){best=dist;near=d;}}
     progress=near;const target=road.frame(progress+Math.max(8,s.speed*.4));
     const desired=Math.atan2(-(target.x-s.x),-(target.z-s.z)),error=Math.atan2(Math.sin(desired-s.heading),Math.cos(desired-s.heading));
-    const speed=road.id==='coast'?26:19;
+    const nearFrame=road.frame(progress+5),far=road.frame(progress+30),curvature=Math.abs(Math.atan2(Math.sin(far.angle-nearFrame.angle),Math.cos(far.angle-nearFrame.angle)))/25;
+    const speed=Math.min(road.id==='coast'?26:19,Math.sqrt(7.5/Math.max(.001,curvature))); // Slow for hairpins, as a driver would.
     const events=stepDrive(s,w,{throttle:s.speed<speed?1:0,brake:s.speed>speed+1,steer:clamp(-error*3,-1,1)},dt);
     assert.ok(!events.includes('collision')&&!events.includes('recover'),road.name+' must be clear and connected');
     assert.equal(w.surface(s.x,s.z).onRoad,true,road.name+' must not have hidden gaps');

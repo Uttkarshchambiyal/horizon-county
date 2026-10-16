@@ -1,4 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
+import {createRegionLayout} from './region-data.js';
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};
 export const BOUNDS={minX:-1500,maxX:1850,minZ:-2250,maxZ:1450};
@@ -118,11 +119,16 @@ export function makeOpenWorld(){
       colliders.push({minX:x+sx*11-.6,maxX:x+sx*11+.6,minZ:z+sz*6-.5,maxZ:z+sz*6+.5});
     }
   }
+  const regionItems=createRegionLayout({roads,buildings,nearestRoad},terrainHeight,coast,seeded(8031));
+  for(const item of regionItems)if(item.solid||item.type==='rock'||item.type==='pine'){const r=item.type==='pine'?.27:item.r;colliders.push({minX:item.x-r,maxX:item.x+r,minZ:item.z-r,maxZ:item.z+r});}
   const collisionBuckets=new Map();
   colliders.forEach(c=>insert(collisionBuckets,c,c.minX-5,c.maxX+5,c.minZ-5,c.maxZ+5));
   const spawns=[{id:'downtown',name:'Downtown',tag:'CITY STREETS',description:'Wide avenues, glass towers and downtown intersections.',x:6,z:485,heading:0},
     {id:'beach',name:'Pacific Beach',tag:'COASTAL HIGHWAY',description:'Palm-lined boulevards, ocean views and an open coast road.',x:-714,z:460,heading:0},
     {id:'hills',name:'Crestline Hills',tag:'MOUNTAIN ROADS',description:'Climb the pass and take the long way back to the city.',...roads.find(r=>r.id==='ridge').frame(1100)}];
+  let beachFrame=null,beachDistance=Infinity;
+  for(let s=0;s<1500;s+=3){const f=coastRoad.frame(s),d=Math.abs(f.z-460);if(d<beachDistance){beachDistance=d;beachFrame=f;}}
+  Object.assign(spawns[1],{x:beachFrame.x+beachFrame.nx*4,z:beachFrame.z+beachFrame.nz*4,heading:beachFrame.angle});
   spawns[2].heading=spawns[2].angle;
   const landmarks=[{name:'Horizon Plaza',x:120,z:440},{name:'Pacific Pier',x:-1000,z:320},{name:'Crestline Lookout',x:390,z:-1260},{name:'North Coast',x:50,z:-1950},{name:'Portside',x:700,z:1090},{name:'Airfield',x:1120,z:-160}];
   function district(x,z){return z<-1450?'NORTH COAST':z<-550?'CRESTLINE HILLS':x<-650?'PACIFIC BEACH':z>880?'PORTSIDE':x>800?'EAST GATE':'DOWNTOWN';}
@@ -142,5 +148,5 @@ export function makeOpenWorld(){
     const bx=clamp(x,BOUNDS.minX+10,BOUNDS.maxX-10),bz=clamp(z,BOUNDS.minZ+10,BOUNDS.maxZ-10);
     return {x:bx,z:bz,hit:hit||bx!==x||bz!==z};
   }
-  return {roads,buildings,colliders,parkedCars,blocks,spawns,landmarks,xs,zs,nearestRoad,surface,resolve,district,bounds:BOUNDS,terrainHeight};
+  return {roads,buildings,colliders,parkedCars,blocks,regionItems,spawns,landmarks,xs,zs,nearestRoad,surface,resolve,district,bounds:BOUNDS,terrainHeight};
 }
