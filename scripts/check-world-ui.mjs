@@ -37,7 +37,7 @@ new Function(...Object.keys(dependencies),source)(...Object.values(dependencies)
 await new Promise(resolve=>setImmediate(resolve));
 const key=(code,key,up=false)=>{for(const fn of listeners.get(up?'keyup':'keydown')||[])fn({code,key,preventDefault(){}});};
 let timestamp=1000;function frames(n){for(let i=0;i<n;i++){timestamp+=1000/60;callback(timestamp);}}
-assert.equal(window.horizon.getState().mode,'menu');
+assert.equal(window.horizon.getState().mode,'menu');assert.ok(renders>0,'A ready scene must render before waiting for a foreground animation frame');
 for(const [letter,sign] of [['a',-1],['d',1]]){
   ids.get('play-button').listeners.click();assert.equal(document.activeElement,ids.get('world'));
   const x=window.horizon.getState().x;key('KeyW','w');key('Key'+letter.toUpperCase(),letter);const beforeRenders=renders;frames(62);assert.ok(renders>beforeRenders,'The ready game must actually request rendering');
@@ -53,7 +53,7 @@ ids.get('help-button').listeners.click();assert.equal(window.horizon.getState().
 key('Escape','Escape');assert.equal(window.horizon.getState().mode,'paused');ids.get('resume-button').listeners.click();assert.equal(window.horizon.getState().mode,'playing');
 ids.get('lighting-button').listeners.click();ids.get('lighting-button').listeners.click();frames(3);
 // Garage and settings pause the real simulation and keep manual control.
-const before=window.horizon.getState();key('KeyG','g');assert.equal(window.horizon.getState().mode,'garage');frames(30);assert.equal(window.horizon.getState().trafficTime,before.trafficTime);
+const before=window.horizon.getState();key('KeyG','g');assert.equal(window.horizon.getState().mode,'garage');frames(30);assert.equal(window.horizon.getState().trafficTime,before.trafficTime);assert.equal(window.horizon.getState().populationTime,before.populationTime);
 document.querySelectorAll('[data-vehicle]')[2].listeners.click();assert.equal(window.horizon.getState().vehicle,'trail');assert.equal(window.horizon.getState().speed,0);
 ids.get('use-car').listeners.click();assert.equal(window.horizon.getState().mode,'playing');
 key('KeyO','o');assert.equal(window.horizon.getState().mode,'settings');frames(2);const frozenRenders=renders;frames(60);assert.equal(renders,frozenRenders,'Paused settings should not continually render the world');

@@ -10,7 +10,7 @@ const scene=new THREE.Scene(),world=makeOpenWorld(),view=buildOpenWorld(scene,wo
 const shapes=new Set();
 for(const type of FLEET_TYPES){const model=fleetModel(type);shapes.add([model.spec.length,model.spec.height,model.spec.wheelbase].join(','));assert.equal(model.wheels.length,4);let triangles=0;for(const part of[...model.parts,...model.wheelParts]){for(const v of part.geometry.attributes.position.array)assert.ok(Number.isFinite(v),type+' geometry must be finite');triangles+=(part.geometry.index?.count||part.geometry.attributes.position.count)/3*(model.wheelParts.includes(part)?4:1);}assert.ok(triangles<2600,'Each traffic vehicle must stay within its geometry budget');}assert.equal(shapes.size,6);
 for(const spawn of world.spawns){
-  fleet.update(.5,spawn);
+  fleet.update(.5,spawn);view.population.update(1,spawn);
   const camera=new THREE.PerspectiveCamera(57,1.6,.18,10000),y=world.surface(spawn.x,spawn.z).height;
   camera.position.set(spawn.x+Math.sin(spawn.heading)*10.5,y+5,spawn.z+Math.cos(spawn.heading)*10.5);camera.lookAt(spawn.x-Math.sin(spawn.heading)*10,y+.8,spawn.z-Math.cos(spawn.heading)*10);camera.updateMatrixWorld();view.visibility.update(spawn.x,spawn.z,'auto',true,camera);scene.updateMatrixWorld(true);
   const frustum=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));let triangles=0,calls=0;

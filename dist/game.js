@@ -1,17 +1,17 @@
 import * as THREE from './vendor/three.module.min.js';
-import {addReflections} from './car.js?v=road-depth-7';
-import {createDrivingControls} from './controls.js?v=road-depth-7';
-import {makeOpenWorld,terrainHeight,coast,clamp} from './world-data.js?v=road-depth-7';
-import {buildOpenWorld} from './world-view.js?v=road-depth-7';
-import {newDriveState,stepDrive,recoverCar} from './driving.js?v=road-depth-7';
-import {VEHICLES,createVehicle} from './vehicles.js?v=road-depth-7';
-import {makeTraffic,stepTraffic,collideTraffic} from './traffic.js?v=road-depth-7';
-import {buildTrafficView} from './traffic-view.js?v=road-depth-7';
-import {loadWorldAssets} from './assets.js?v=road-depth-7';
-import {loadSportsCar} from './sports-car.js?v=road-depth-7';
-import {animateVehicle} from './vehicle-motion.js?v=road-depth-7';
-import {createEngineAudio,engineTelemetry} from './engine-audio.js?v=road-depth-7';
-import {renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias} from './render-quality.js?v=road-depth-7';
+import {addReflections} from './car.js?v=populated-8';
+import {createDrivingControls} from './controls.js?v=populated-8';
+import {makeOpenWorld,terrainHeight,coast,clamp} from './world-data.js?v=populated-8';
+import {buildOpenWorld} from './world-view.js?v=populated-8';
+import {newDriveState,stepDrive,recoverCar} from './driving.js?v=populated-8';
+import {VEHICLES,createVehicle} from './vehicles.js?v=populated-8';
+import {makeTraffic,stepTraffic,collideTraffic} from './traffic.js?v=populated-8';
+import {buildTrafficView} from './traffic-view.js?v=populated-8';
+import {loadWorldAssets} from './assets.js?v=populated-8';
+import {loadSportsCar} from './sports-car.js?v=populated-8';
+import {animateVehicle} from './vehicle-motion.js?v=populated-8';
+import {createEngineAudio,engineTelemetry} from './engine-audio.js?v=populated-8';
+import {renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias} from './render-quality.js?v=populated-8';
 const $=id=>document.getElementById(id),canvas=$('world');
 let renderer;
 try{const context=canvas.getContext('webgl2',{antialias:true,powerPreference:'high-performance'}),reversedDepth=!!context?.getExtension?.('EXT_clip_control');renderer=new THREE.WebGLRenderer({canvas,context,antialias:true,reversedDepthBuffer:reversedDepth,logarithmicDepthBuffer:!reversedDepth,powerPreference:'high-performance'});}catch(error){$('loading').classList.add('hidden');$('fatal-error').classList.remove('hidden');$('error-message').textContent='This world needs a browser with WebGL and hardware acceleration.';throw error;}
@@ -41,7 +41,7 @@ let assetsStatus='loading';const worldAssetsPromise=loadWorldAssets(scene,render
 const headlights=[];
 for(const side of[-1,1]){const light=new THREE.SpotLight(0xe5f3ff,95,85,.48,.65,1.1);light.position.set(side*.7,.2,-2.3);light.target.position.set(side*2,-.4,-38);car.add(light,light.target);headlights.push(light);}
 const controls=createDrivingControls(),touch={left:false,right:false,throttle:false,brake:false,boost:false};
-let selected=0,state=newDriveState(world),previous={...state},mode='menu',cameraMode=0,cameraHeading=state.heading,time=0,lastTime=0,accumulator=0,hudTime=0,toastTime=0;
+let selected=0,state=newDriveState(world),previous={...state},mode='menu',cameraMode=0,cameraHeading=state.heading,time=0,populationTime=0,lastTime=0,accumulator=0,hudTime=0,toastTime=0;
 let muted=false,lights=false,lighting=0,waypoint=null,modeBeforeMap='menu',modeBeforeHelp='menu',modeBeforeGarage='menu',modeBeforeSettings='menu';
 const frameBudget=createFrameBudget();
 let cameraBack=10.5,measuredFps=0,acceleration=0,lastSpeed=0,lastIdleRender=0,renderDirty=true,wasPlaying=false,graphicsReady=false;
@@ -56,7 +56,7 @@ const audio=createEngineAudio();
 function initAudio(){audio.start();}
 function clearInput(){audio.silence();controls.clear();Object.keys(touch).forEach(k=>touch[k]=false);document.querySelectorAll('[data-control]').forEach(b=>b.classList.remove('pressed'));}
 function focusGame(){canvas.focus({preventScroll:true});}
-function sync(){previous={...state};accumulator=0;trafficView.update(1,state);positionCar(0,1);updateCamera(1,true);view.visibility.update(state.x,state.z,preference.quality,true,camera,preference.quality==='auto'?frameBudget.status.tier:0);updateHUD();renderDirty=true;if(graphicsReady)renderer.render(scene,camera);}
+function sync(){previous={...state};accumulator=0;trafficView.update(1,state);view.population.update(populationTime,state);positionCar(0,1);updateCamera(1,true);view.visibility.update(state.x,state.z,preference.quality,true,camera,preference.quality==='auto'?frameBudget.status.tier:0);updateHUD();renderDirty=true;if(graphicsReady)renderer.render(scene,camera);}
 function toast(title,sub='',duration=2.5){$('toast').textContent=title;if(sub){const small=document.createElement('small');small.textContent=sub;$('toast').appendChild(small);}$('toast').classList.add('visible');toastTime=duration;}
 function selectSpawn(index){selected=index;state=newDriveState(world,world.spawns[index],currentCar.spec.id);clearInput();sync();document.querySelectorAll('[data-spawn]').forEach(b=>{const on=+b.dataset.spawn===index;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});}
 function startDrive(){initAudio();clearInput();mode='playing';state=newDriveState(world,world.spawns[selected],currentCar.spec.id);document.body.classList.add('playing');$('menu').classList.add('hidden');$('drive-hud').classList.remove('hidden');$('pause-button').classList.remove('hidden');for(const id of['pause-overlay','map-overlay','help-overlay','garage-overlay','settings-overlay'])$(id).classList.add('hidden');cameraMode=0;sync();focusGame();toast('HORIZON COUNTY','WASD TO DRIVE / M TO EXPLORE THE MAP');}
@@ -112,6 +112,9 @@ function makeAtlas(){
   atlasCtx.fillStyle='#64736e';for(const c of world.buildings){const p=mapPoint(c.x-c.w/2,c.z-c.d/2);atlasCtx.fillRect(p[0],p[1],c.w*scale,c.d*scale);}
   atlasCtx.lineCap='round';atlasCtx.lineJoin='round';
   for(const r of world.roads){atlasCtx.beginPath();r.samples.forEach((f,i)=>{const p=mapPoint(f.x,f.z);i?atlasCtx.lineTo(...p):atlasCtx.moveTo(...p);});atlasCtx.strokeStyle=r.kind==='highway'?'#c2b79c':'#bfc5bc';atlasCtx.lineWidth=(r.width+4)*scale;atlasCtx.stroke();atlasCtx.strokeStyle='#67716e';atlasCtx.lineWidth=r.width*scale;atlasCtx.stroke();}
+  atlasCtx.fillStyle='#baa788';atlasCtx.strokeStyle='#baa788';
+  for(const deck of world.life.decks){if(deck.kind==='boardwalk'){atlasCtx.beginPath();for(let z=deck.minZ;z<=deck.maxZ;z+=10){const p=mapPoint(coast(z)+deck.offset,z);z===deck.minZ?atlasCtx.moveTo(...p):atlasCtx.lineTo(...p);}atlasCtx.lineWidth=Math.max(1.2,deck.width*scale);atlasCtx.stroke();}else{const p=mapPoint(deck.minX,deck.minZ);atlasCtx.fillRect(p[0],p[1],Math.max(1.2,(deck.maxX-deck.minX)*scale),Math.max(1.2,(deck.maxZ-deck.minZ)*scale));}}
+  for(const p of world.life.props){if(!['court','playground','container','container-stack','tower','plane'].includes(p.kind))continue;const point=mapPoint(p.x,p.z);atlasCtx.save();atlasCtx.translate(...point);atlasCtx.rotate(-p.angle);atlasCtx.fillStyle=p.kind==='court'?'#528b8a':p.site==='port'?'#9d7b58':'#9ba69a';atlasCtx.fillRect(-p.w*scale/2,-p.d*scale/2,p.w*scale,p.d*scale);atlasCtx.restore();}
   atlasCtx.fillStyle='#e1e1cf';atlasCtx.font='600 19px sans-serif';atlasCtx.textAlign='center';
   for(const [name,x,z] of[['DOWNTOWN',220,440],['PACIFIC BEACH',-1000,40],['CRESTLINE HILLS',140,-1470],['NORTH COAST',40,-2070],['EAST GATE',1260,290],['PORTSIDE',620,1230]]){const p=mapPoint(x,z);atlasCtx.fillText(name,...p);}
 }
@@ -163,7 +166,7 @@ function updateHUD(){const input=controls.read(touch),surface=world.surface(stat
   $('waypoint-hud').classList.toggle('hidden',!waypoint);if(waypoint){const d=Math.hypot(waypoint.x-state.x,waypoint.z-state.z);$('waypoint-distance').textContent=d>1000?(d/1000).toFixed(2)+' KM':Math.round(d)+' M';if(d<20){waypoint=null;toast('WAYPOINT REACHED');}}
   drawMinimap();
 }
-function physics(dt){Object.assign(previous,state);const impactSpeed=Math.abs(state.speed);stepTraffic(traffic,world,state,dt);for(const event of stepDrive(state,world,controls.read(touch),dt)){if(event==='recover'){Object.assign(previous,state);toast('RETURNED TO THE ROAD','WATER RECOVERY');}else if(event==='collision')audio.effect('impact',impactSpeed/30);else if(event==='land')audio.effect('impact',.25);}
+function physics(dt){populationTime+=dt;Object.assign(previous,state);const impactSpeed=Math.abs(state.speed);stepTraffic(traffic,world,state,dt);for(const event of stepDrive(state,world,controls.read(touch),dt)){if(event==='recover'){Object.assign(previous,state);toast('RETURNED TO THE ROAD','WATER RECOVERY');}else if(event==='collision')audio.effect('impact',impactSpeed/30);else if(event==='land')audio.effect('impact',.25);}
   if(collideTraffic(state,traffic)&&impactSpeed>4)audio.effect('impact',impactSpeed/30);if(state.grounded)state.y=Math.max(state.y,world.surface(state.x,state.z).height+.55);acceleration=(state.speed-lastSpeed)/dt;lastSpeed=state.speed;
   for(const l of world.landmarks)if(!visited.has(l.name)&&Math.hypot(state.x-l.x,state.z-l.z)<38){visited.add(l.name);toast(l.name.toUpperCase(),'NEW PLACE DISCOVERED');try{localStorage.setItem('horizon-world-discoveries-v1',JSON.stringify([...visited]));}catch{}}
 }
@@ -175,7 +178,7 @@ function frame(timestamp){requestAnimationFrame(frame);if(!lastTime)lastTime=tim
   }else if(!wasPlaying){frameBudget.reset();accumulator=0;wasPlaying=true;}
   renderDirty=false;time+=dt;hudTime+=dt;
   if(mode==='playing'){accumulator+=dt;while(accumulator>=1/120){physics(1/120);accumulator-=1/120;}}
-  if(mode==='playing'||mode==='menu'||mode==='garage'){positionCar(mode==='playing'?dt:0);updateCamera(dt);}view.update(time,camera);view.visibility.update(state.x,state.z,preference.quality,false,camera,preference.quality==='auto'?frameBudget.status.tier:0);trafficView.update(mode==='playing'?clamp(accumulator*120,0,1):1,state);
+  if(mode==='playing'||mode==='menu'||mode==='garage'){positionCar(mode==='playing'?dt:0);updateCamera(dt);}view.update(time,camera);view.population.update(populationTime,state);view.visibility.update(state.x,state.z,preference.quality,false,camera,preference.quality==='auto'?frameBudget.status.tier:0);trafficView.update(mode==='playing'?clamp(accumulator*120,0,1):1,state);
   if(mode==='playing'){const sample=frameBudget.sample(rawDt);if(sample){measuredFps=sample.fps;$('fps-value').textContent=measuredFps+' FPS / '+sample.frameMs.toFixed(1)+' MS / P95 '+sample.p95.toFixed(1)+' MS';$('live-fps').textContent=measuredFps+' FPS';$('live-fps').dataset.slow=String(measuredFps<55);if(preference.quality==='auto'&&sample.changed)applyQuality();}}
   if(mode!=='menu'&&hudTime>1/10){updateHUD();hudTime=0;}
   if(toastTime>0){toastTime-=dt;if(toastTime<=0)$('toast').classList.remove('visible');}
@@ -214,5 +217,5 @@ document.querySelectorAll('[data-control]').forEach(button=>{const key=button.da
 window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();if(mode==='menu')updateCamera(1,true);applyQuality();});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();pause();$('fatal-error').classList.remove('hidden');$('error-message').textContent='The graphics connection was interrupted. Reload to continue driving.';});
 makeAtlas();setLighting(1);applyQuality();setVehicle(preference.vehicle);updateTrafficSetting();selectSpawn(0);sportsCarPromise.then(()=>{sync();$('car-asset-status').textContent='FERRARI 458 ITALIA / MODEL BY VICENT091036';}).catch(()=>{$('car-asset-status').textContent='DETAILED MODEL UNAVAILABLE / FALLBACK CAR ACTIVE';});
-Promise.allSettled([sportsCarPromise,worldAssetsPromise]).then(async()=>{$('loading-detail').textContent='PREPARING SHADERS / READYING THE ROAD';await renderer.compileAsync?.(scene,camera);}).catch(()=>{}).finally(()=>{graphicsReady=true;renderDirty=true;$('loading').classList.add('hidden');});requestAnimationFrame(frame);
-window.horizon={getState:()=>({...state,mode,world:'Horizon County',district:world.district(state.x,state.z),vehicle:currentCar.spec.id,traffic:traffic.enabled,trafficTime:traffic.time,assets:assetsStatus,carModel:garage[0].assetReady?'ferrari-458':'loading-or-fallback',city:view.cityStats,fps:measuredFps,frameBudget:{...frameBudget.status},quality:preference.quality,pixelRatio:renderPixelRatio(preference.quality,devicePixelRatio,innerWidth,innerHeight,frameBudget.status.scale),audio:audio.status,engine:audio.telemetry,rendering:{...view.visibility.stats,fleet:{...trafficView.stats}}}),getInput:()=>controls.read(touch),getRendererInfo:()=>({...renderer.info.render}),getWorld:()=>world};
+Promise.allSettled([sportsCarPromise,worldAssetsPromise]).then(async()=>{$('loading-detail').textContent='PREPARING SHADERS / READYING THE ROAD';let timer;try{await Promise.race([renderer.compileAsync?.(scene,camera),new Promise(resolve=>{timer=setTimeout(resolve,6000);})]);}finally{clearTimeout(timer);}}).catch(()=>{}).finally(()=>{graphicsReady=true;renderDirty=true;sync();$('loading').classList.add('hidden');});requestAnimationFrame(frame);
+window.horizon={getState:()=>({...state,mode,populationTime,world:'Horizon County',district:world.district(state.x,state.z),vehicle:currentCar.spec.id,traffic:traffic.enabled,trafficTime:traffic.time,assets:assetsStatus,carModel:garage[0].assetReady?'ferrari-458':'loading-or-fallback',city:view.cityStats,fps:measuredFps,frameBudget:{...frameBudget.status},quality:preference.quality,pixelRatio:renderPixelRatio(preference.quality,devicePixelRatio,innerWidth,innerHeight,frameBudget.status.scale),audio:audio.status,engine:audio.telemetry,rendering:{...view.visibility.stats,population:{...view.population.stats},fleet:{...trafficView.stats}}}),getInput:()=>controls.read(touch),getRendererInfo:()=>({...renderer.info.render}),getWorld:()=>world};

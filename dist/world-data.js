@@ -1,6 +1,7 @@
 import * as THREE from './vendor/three.module.min.js';
-import {createRegionLayout} from './region-data.js?v=road-depth-7';
-import {createStreetDetails} from './street-details.js?v=road-depth-7';
+import {createRegionLayout} from './region-data.js?v=populated-8';
+import {createStreetDetails} from './street-details.js?v=populated-8';
+import {createDistrictLife,deckSurface} from './district-life.js?v=populated-8';
 export const ROAD_SURFACE=.095;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};
@@ -55,6 +56,12 @@ export function makeOpenWorld(){
       const t=clamp(((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1),0,1),px=a.x+dx*t,pz=a.z+dz*t,d=(x-px)**2+(z-pz)**2;
       if(d<d2){d2=d;best={road:seg.road,x:px,z:pz,distance:Math.sqrt(d),s:a.s+(b.s-a.s)*t,angle:Math.atan2(-dx,-dz)};}
     }return best;
+  }
+  function isJunction(f,road,extra=4){
+    for(const {road:other,a,b} of buckets.get(key(f.x,f.z))||[]){
+      if(other===road)continue;const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz);if(Math.abs((f.tx*dx+f.tz*dz)/length)>.92)continue;
+      const t=clamp(((f.x-a.x)*dx+(f.z-a.z)*dz)/(length*length),0,1);if(Math.hypot(f.x-a.x-dx*t,f.z-a.z-dz*t)<other.width/2+extra)return true;
+    }return false;
   }
   function addBuilding(x,z,w,d,h,type,facing=0){
     if(terrainHeight(x,z)<2||x<coast(z)+125)return false;
@@ -122,12 +129,13 @@ export function makeOpenWorld(){
     }
   }
   const regionItems=createRegionLayout({roads,buildings,nearestRoad},terrainHeight,coast,seeded(8031));
-  for(const item of regionItems)if(item.solid||item.type==='rock'||item.type==='pine'){
+  for(const item of regionItems)if(item.solid||item.type==='rock'||item.type==='pine'||item.type==='birch'){
     const {x:cx,z:cz,type,angle}=item,footprints={lookout:[6,4.5],cabin:[3.5,3.6],kiosk:[3.5,3.6],lifeguard:[2.5,2]},footprint=footprints[type];
     if(footprint){const [halfX,halfZ]=footprint,dx=Math.abs(Math.cos(angle))*halfX+Math.abs(Math.sin(angle))*halfZ,dz=Math.abs(Math.sin(angle))*halfX+Math.abs(Math.cos(angle))*halfZ;colliders.push({cx,cz,angle,halfX,halfZ,minX:cx-dx,maxX:cx+dx,minZ:cz-dz,maxZ:cz+dz,type});}
-    else {const radius=type==='pine'?.23:type==='tent'?3.35:item.r*.88;colliders.push({cx,cz,radius,minX:cx-radius,maxX:cx+radius,minZ:cz-radius,maxZ:cz+radius,type});}
+    else {const radius=type==='pine'||type==='birch'?.23:type==='tent'?3.35:item.r*.88;colliders.push({cx,cz,radius,minX:cx-radius,maxX:cx+radius,minZ:cz-radius,maxZ:cz+radius,type});}
   }
   const streetDetails=createStreetDetails({buildings,nearestRoad},terrainHeight);for(const i of streetDetails)if(i.solid)colliders.push({cx:i.x,cz:i.z,radius:i.r,minX:i.x-i.r,maxX:i.x+i.r,minZ:i.z-i.r,maxZ:i.z+i.r,type:i.type});
+  const life=createDistrictLife({roads,buildings,blocks,nearestRoad,xs,zs},terrainHeight,coast,seeded(9124));parkedCars.push(...life.parking);colliders.push(...life.footprints);
   const collisionBuckets=new Map();
   colliders.forEach(c=>insert(collisionBuckets,c,c.minX-5,c.maxX+5,c.minZ-5,c.maxZ+5));
   const registered=new Set();
@@ -141,15 +149,17 @@ export function makeOpenWorld(){
   for(let s=0;s<1500;s+=3){const f=coastRoad.frame(s),d=Math.abs(f.z-460);if(d<beachDistance){beachDistance=d;beachFrame=f;}}
   Object.assign(spawns[1],{x:beachFrame.x+beachFrame.nx*4,z:beachFrame.z+beachFrame.nz*4,heading:beachFrame.angle});
   spawns[2].heading=spawns[2].angle;
-  const landmarks=[{name:'Horizon Plaza',x:120,z:440},{name:'Pacific Pier',x:-1000,z:320},{name:'Crestline Lookout',x:390,z:-1260},{name:'North Coast',x:50,z:-1950},{name:'Portside',x:700,z:1090},{name:'Airfield',x:1120,z:-160}];
+  const landmarks=[{name:'Horizon Plaza',x:120,z:440},{name:'Pacific Pier',x:coast(320)-35,z:320},{name:'Crestline Lookout',x:390,z:-1260},{name:'North Coast',x:50,z:-1950},{name:'Portside',x:692,z:1320},{name:'Airfield',x:1120,z:-160}];
   const lookout=regionItems.filter(i=>i.type==='lookout').sort((a,b)=>Math.hypot(a.x-390,a.z+1260)-Math.hypot(b.x-390,b.z+1260))[0];if(lookout)Object.assign(landmarks[2],{x:lookout.x,z:lookout.z});
   function district(x,z){return z<-1450?'NORTH COAST':z<-550?'CRESTLINE HILLS':x<-650?'PACIFIC BEACH':z>880?'PORTSIDE':x>800?'EAST GATE':'DOWNTOWN';}
   function surface(x,z){
     const road=nearestRoad(x,z),ground=terrainHeight(x,z),onRoad=!!road&&road.distance<road.road.width/2;let height=ground;
     if(onRoad)height+=ROAD_SURFACE;
-    else if(road?.road.kind==='street'&&road.distance<road.road.width/2+2.3)height+=.16;
+    else if(road&&(road.road.kind==='street'||road.road.kind==='highway'&&x<-700&&z>-500&&z<1030)&&road.distance<road.road.width/2+(road.road.kind==='street'?7:5))height+=.16;
     else for(const b of blocks)if(Math.abs(x-b.x)<b.w/2+2&&Math.abs(z-b.z)<b.d/2+2){const dx=Math.abs(x-b.x),dz=Math.abs(z-b.z),edge=dx>b.w/2-.5||dz>b.d/2-.5;height=Math.max(height,b.y+(edge?.23:(b.use==='park'||b.use==='plaza')&&(dx<2||dz<2)?.26:.19));break;}
-    return {height,water:ground<.1,onRoad,road:road?.road.name||'Off road',district:district(x,z)};
+    if(!onRoad)for(const p of life.surfaces){const dx=x-p.x,dz=z-p.z,c=Math.cos(p.angle),s=Math.sin(p.angle);if(Math.abs(dx*c-dz*s)<p.w/2&&Math.abs(dx*s+dz*c)<p.d/2)height=Math.max(height,p.height);}
+    const deck=deckSurface(life.decks,x,z,terrainHeight,coast);if(deck!==null)height=Math.max(height,deck);
+    return {height,water:ground<.1&&deck===null,onRoad,road:road?.road.name||(deck!==null?'Waterfront promenade':'Off road'),district:district(x,z)};
   }
   function resolve(x,z,heading,bodyRadius=1.12,halfLength=1.2){
     let hit=false;
@@ -169,5 +179,5 @@ export function makeOpenWorld(){
     const bx=clamp(x,BOUNDS.minX+10,BOUNDS.maxX-10),bz=clamp(z,BOUNDS.minZ+10,BOUNDS.maxZ-10);
     return {x:bx,z:bz,hit:hit||bx!==x||bz!==z};
   }
-  return {roads,buildings,colliders,parkedCars,blocks,regionItems,streetDetails,spawns,landmarks,xs,zs,nearestRoad,surface,resolve,addSceneryCollider,district,bounds:BOUNDS,terrainHeight};
+  return {roads,buildings,colliders,parkedCars,blocks,regionItems,streetDetails,life,spawns,landmarks,xs,zs,nearestRoad,isJunction,surface,resolve,addSceneryCollider,district,bounds:BOUNDS,terrainHeight};
 }

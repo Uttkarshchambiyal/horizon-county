@@ -23,6 +23,10 @@ for(const v of['clubsport','touring','trail']){
   const crest={...flat,surface:(x,z)=>({height:z>0?z*.15:0,onRoad:true})},s=newDriveState(crest,{x:0,z:20,heading:0});s.speed=25;let airborne=false;for(let i=0;i<300;i++){stepDrive(s,crest,{},dt);airborne ||= !s.grounded;assert.ok(s.y>=crest.surface(s.x,s.z).height+.55-.000001);}assert.ok(airborne&&s.grounded,'A road crest must allow a small flight and a stable gravity landing');
 }
 {
+  const curb={...flat,surface:(x,z)=>({height:z<=0?.16:0,onRoad:true})},s=newDriveState(curb,{x:0,z:10,heading:0});s.speed=20;
+  for(let i=0;i<240;i++){stepDrive(s,curb,{},dt);assert.equal(s.grounded,true,'A small paving step must not inject a launch velocity');}
+}
+{
   const traffic={enabled:true,cars:[{x:0,z:0,y:.55,heading:0,tx:0,tz:-1,type:'sedan',speed:0}]},s=newDriveState(flat,{x:1.8,z:0,heading:0});s.speed=15;
   assert.equal(collideTraffic(s,traffic),true);assert.ok(s.speed>14,'A sideswipe must retain forward speed');assert.equal(collideTraffic(s,traffic),false,'One separation must clear the overlap');
   const air=newDriveState(flat,{x:0,z:0,heading:0});air.y=5;assert.equal(collideTraffic(air,traffic),false,'Airborne vehicles must not hit traffic far below');

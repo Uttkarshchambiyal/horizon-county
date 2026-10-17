@@ -1,6 +1,6 @@
-import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=road-depth-7';
-import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=road-depth-7';
-import {vehicleSpec} from './vehicles.js?v=road-depth-7';
+import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=populated-8';
+import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=populated-8';
+import {vehicleSpec} from './vehicles.js?v=populated-8';
 
 // A small, deterministic fleet follows continuous right-hand lanes. It runs on
 // the same fixed clock as the player, so pausing freezes cars and signals.
@@ -43,6 +43,11 @@ export function makeTraffic(world){
     const c=cars[id],route=routes[c.route];let best=Infinity;
     for(let s=0;s<route.length;s+=2){const f=route.frame(s),d=Math.hypot(f.x-x,f.z-z);if(d<best){best=d;c.s=s;}}
     Object.assign(c,route.frame(c.s));
+  }
+  // Keep the coastal start alive too, without increasing the simulated fleet.
+  const beach=world.spawns[1];for(const [routeIndex,ahead] of[[6,100],[7,160]]){
+    const c=cars.find(c=>c.route===routeIndex),route=routes[routeIndex],x=beach.x-Math.sin(beach.heading)*ahead,z=beach.z-Math.cos(beach.heading)*ahead;let best=Infinity;
+    for(let s=0;s<route.length;s+=2){const f=route.frame(s),d=Math.hypot(f.x-x,f.z-z);if(d<best){best=d;c.s=s;}}Object.assign(c,route.frame(c.s));
   }
   const traffic={routes,cars,time:0,enabled:true};
   cars.forEach(c=>{c.y=terrainHeight(c.x,c.z)+ROAD_SURFACE+.55;});

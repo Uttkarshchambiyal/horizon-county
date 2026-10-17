@@ -1,5 +1,5 @@
-import {clamp} from './world-data.js?v=road-depth-7';
-import {vehicleSpec} from './vehicles.js?v=road-depth-7';
+import {clamp} from './world-data.js?v=populated-8';
+import {vehicleSpec} from './vehicles.js?v=populated-8';
 const angle=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function newDriveState(world,spawn=world.spawns[0],vehicleId='clubsport'){
@@ -13,7 +13,7 @@ export function recoverCar(state,world,spawn){
 }
 export function stepDrive(state,world,input,dt){
   const events=[],spec=vehicleSpec(state.vehicleId),oldSpeed=state.speed;state.elapsed+=dt;state.hitCooldown=Math.max(0,state.hitCooldown-dt);
-  const start=world.surface(state.x,state.z),gas=!!input.throttle,brake=!!input.brake,speed=Math.abs(state.speed);
+  const start=world.surface(state.x,state.z),gas=!!input.throttle,brake=!!input.brake,speed=Math.abs(state.speed);let supportGrade=0;
   const boost=gas&&!brake&&input.boost&&state.boost>1&&state.speed>6&&!start.water&&state.grounded;
   state.boost=clamp(state.boost+(boost?-26:9)*dt,0,100);
   const top=start.water?3:start.onRoad?(boost?spec.boostTop:spec.top):spec.offRoad;
@@ -29,7 +29,7 @@ export function stepDrive(state,world,input,dt){
   if(input.drift)state.speed=approach(state.speed,0,7.5*dt);
   if(state.grounded&&(gas&&!brake||Math.abs(state.speed)>.15||brake&&state.reverseHold>.28)){
     const hx=-Math.sin(state.heading),hz=-Math.cos(state.heading),front=world.surface(state.x+hx*1.4,state.z+hz*1.4).height,back=world.surface(state.x-hx*1.4,state.z-hz*1.4).height;
-    state.speed-=9.81*clamp((front-back)/2.8,-.6,.6)*dt;
+    supportGrade=clamp((front-back)/2.8,-.6,.6);state.speed-=9.81*supportGrade*dt;
   }
   if(state.speed>top)state.speed=approach(state.speed,top,18*dt);
   state.speed=clamp(state.speed,-9,spec.boostTop);if(!gas&&!brake&&Math.abs(state.speed)<.08)state.speed=0;
@@ -55,7 +55,7 @@ export function stepDrive(state,world,input,dt){
     if(length<.000001)state.speed=0;
   }
   const travelled=Math.hypot(state.x-oldX,state.z-oldZ);state.distance+=travelled;state.wheelTravel+=travelled*Math.sign(oldSpeed||state.speed);
-  const surface=world.surface(state.x,state.z),ground=surface.height+.55,previousGround=start.height+.55,groundVelocity=(ground-previousGround)/dt;
+  const surface=world.surface(state.x,state.z),ground=surface.height+.55,previousGround=start.height+.55,supportVelocity=Math.abs(state.speed*supportGrade)+.1,groundVelocity=clamp((ground-previousGround)/dt,-supportVelocity,supportVelocity);
   if(state.grounded){
     if(Math.abs(state.speed)>12&&state.verticalSpeed-groundVelocity>1.5&&ground<state.y+state.verticalSpeed*dt-9.81*dt*dt){state.grounded=false;state.verticalSpeed-=9.81*dt;state.y+=state.verticalSpeed*dt;}
     else {state.y=ground;state.verticalSpeed=groundVelocity;}

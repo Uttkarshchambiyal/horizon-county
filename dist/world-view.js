@@ -1,19 +1,28 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=road-depth-7';
-import {buildCity} from './city-view.js?v=road-depth-7';
-import {buildRegions} from './region-view.js?v=road-depth-7';
-import {streamStaticWorld} from './world-streaming.js?v=road-depth-7';
-import {surfaceDepthBias} from './render-quality.js?v=road-depth-7';
+import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=populated-8';
+import {buildCity} from './city-view.js?v=populated-8';
+import {buildRegions} from './region-view.js?v=populated-8';
+import {streamStaticWorld} from './world-streaming.js?v=populated-8';
+import {surfaceDepthBias} from './render-quality.js?v=populated-8';
+import {buildPedestrians} from './pedestrians.js?v=populated-8';
 
 export function buildOpenWorld(scene,world,{reversedDepth=false}={}){
   const group=new THREE.Group();scene.add(group);
   const random=seeded(9103),cube=new THREE.BoxGeometry(1,1,1),batches=new Map();
   const material=(color,roughness=.8,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
   const concrete=material(0xb9b8a9),curb=material(0xd8d3c0),dark=material(0x30383a,.65,.25),white=material(0xdeddd0),yellow=material(0xe2bd68),sand=material(0xc9b989),wood=material(0x806a48);
+  for(const [surface,planks] of[[curb,false],[wood,true]]){
+    const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');ctx.fillStyle=planks?'#6b5945':'#a9a79d';ctx.fillRect(0,0,256,256);
+    for(let row=0;row<8;row++)for(let col=0;col<(planks?2:8);col++){const light=planks?42+random()*13:68+random()*12;ctx.fillStyle=planks?`hsl(32 21% ${light}%)`:`hsl(44 7% ${light}%)`;ctx.fillRect(col*(planks?128:32)+1,row*32+1,(planks?126:30),30);}
+    ctx.fillStyle=planks?'#342c201a':'#33382d14';for(let n=0;n<2200;n++)ctx.fillRect(random()*256,random()*256,planks?4+random()*16:1,1);
+    surface.map=new THREE.CanvasTexture(c);surface.map.wrapS=surface.map.wrapT=THREE.RepeatWrapping;surface.map.colorSpace=THREE.SRGBColorSpace;surface.map.anisotropy=4;surface.map.repeat.setScalar(planks?1:4);surface.color.set(0xffffff);
+  }
   const addBox=(w,h,d,m,x,y,z,rotation=0)=>{
     if(!batches.has(m))batches.set(m,[]);
     const o=new THREE.Object3D();o.position.set(x,y,z);o.scale.set(w,h,d);o.rotation.y=rotation;o.updateMatrix();batches.get(m).push(o.matrix.clone());
   };
+  const beamObject=new THREE.Object3D(),beamDirection=new THREE.Vector3(),beamAxis=new THREE.Vector3(0,0,1);
+  function addBeam(a,b,material,size=.12){if(!batches.has(material))batches.set(material,[]);beamDirection.set(b.x-a.x,b.y-a.y,b.z-a.z);const length=beamDirection.length();beamObject.position.set((a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2);beamObject.quaternion.setFromUnitVectors(beamAxis,beamDirection.normalize());beamObject.scale.set(size,size,length);beamObject.updateMatrix();batches.get(material).push(beamObject.matrix.clone());}
   // Detailed ground colour comes from elevation and position; the surface used
   // by the car samples the exact same height function as the terrain mesh.
   const sizeX=BOUNDS.maxX-BOUNDS.minX,sizeZ=BOUNDS.maxZ-BOUNDS.minZ;
@@ -52,7 +61,7 @@ float wave=sin(p.x*.13+p.z*.19+time)*sin(p.x*.024-p.z*.04+time*.4);float glint=p
   }
   const asphalt=new THREE.MeshStandardMaterial({color:0x55585a,map:asphaltTexture(),roughness:.94,...surfaceDepthBias(reversedDepth)});
   const paintWhite=white.clone(),paintYellow=yellow.clone();for(const m of[paintWhite,paintYellow])Object.assign(m,surfaceDepthBias(reversedDepth,3),{depthWrite:false});
-  const inJunction=(f,road)=>road.kind==='street'&&world.roads.some(other=>other!==road&&other.kind==='street'&&((other.id.startsWith('avenue')&&Math.abs(f.x-other.samples[0].x)<other.width/2+3)||(other.id.startsWith('street')&&Math.abs(f.z-other.samples[0].z)<other.width/2+3)));
+  const inJunction=(f,road)=>world.isJunction(f,road),beachfront=f=>f.x<-700&&f.z>-500&&f.z<1030;
   function strip(road,left,right,rise,m,skip){
     const ps=[],uv=[],indices=[];
     for(let i=0;i<road.samples.length;i++){
@@ -68,8 +77,8 @@ float wave=sin(p.x*.13+p.z*.19+time)*sin(p.x*.024-p.z*.04+time*.4);float glint=p
     strip(road,-half,half,ROAD_SURFACE,asphalt);
     for(const side of[-1,1]){
       strip(road,side*(half-.3),side*(half-.12),.13,paintWhite,f=>inJunction(f,road));
-      if(road.kind==='street')strip(road,side*(half+.1),side*(half+2.3),.16,curb,f=>inJunction(f,road));
-      else if(road.kind==='highway')strip(road,side*(half+1.6),side*(half+1.9),.75,dark);
+      if(road.kind==='street')strip(road,side*(half+.1),side*(half+7),.16,curb,f=>inJunction(f,road));
+      else if(road.kind==='highway'){strip(road,side*(half+1.6),side*(half+1.9),.75,dark,f=>beachfront(f)||inJunction(f,road));strip(road,side*(half+.1),side*(half+5),.16,curb,f=>!beachfront(f)||inJunction(f,road));}
     }
     strip(road,-.22,-.1,.135,paintYellow,f=>inJunction(f,road));strip(road,.1,.22,.135,paintYellow,f=>inJunction(f,road));
     if(road.width>26)for(const off of[-7,7])strip(road,off-.07,off+.07,.136,paintWhite,f=>Math.floor(f.s/6)%3===0||inJunction(f,road));
@@ -90,15 +99,20 @@ float wave=sin(p.x*.13+p.z*.19+time)*sin(p.x*.024-p.z*.04+time*.4);float glint=p
       addBox(3.2,.025,1.35,white,x+side*20,terrainHeight(x,z)+.14,z+i*2.1);
     }
   }
-  const city=buildCity(group,world),regions=buildRegions(group,world);
+  const city=buildCity(group,world),regions=buildRegions(group,world,city.leafMaterials);
   // Every parked vehicle has a marked bay beside its building.
-  for(const p of world.parkedCars){addBox(3,.05,6.2,concrete,p.x,p.y+.03,p.z);for(const side of[-1,1])addBox(.09,.015,5.7,white,p.x+side*1.4,p.y+.065,p.z);addBox(2.8,.015,.09,white,p.x,p.y+.065,p.z+2.9);}
+  for(const p of world.parkedCars){const a=p.heading||0;addBox(3,.05,6.2,concrete,p.x,p.y+.03,p.z,a);for(const side of[-1,1])addBox(.09,.015,5.7,white,p.x+Math.cos(a)*side*1.4,p.y+.065,p.z-Math.sin(a)*side*1.4,a);addBox(2.8,.015,.09,white,p.x+Math.sin(a)*2.9,p.y+.065,p.z+Math.cos(a)*2.9,a);}
 
   // A beach boardwalk, long pier and a small marina give the coast a destination.
-  addBox(8,.35,1150,wood,-1040,1.3,280);
-  addBox(145,.6,16,wood,-1088,1.7,320);
-  for(let x=-1150;x<-1015;x+=14)for(const side of[-1,1])addBox(.5,4,.5,dark,x,-.5,320+side*6);
-  for(let z=900;z<1150;z+=65)for(let x=220;x<850;x+=120){addBox(86,.7,8,concrete,x,1.3,z);}
+  for(const deck of world.life.decks){
+    const positions=[],uv=[],indices=[],boardwalk=deck.kind==='boardwalk',minX=boardwalk?-deck.width/2:deck.minX,maxX=boardwalk?deck.width/2:deck.maxX,columns=boardwalk?2:Math.ceil((maxX-minX)/5),rows=Math.ceil((deck.maxZ-deck.minZ)/5);
+    for(let row=0;row<=rows;row++)for(let col=0;col<=columns;col++){
+      const z=THREE.MathUtils.lerp(deck.minZ,deck.maxZ,row/rows),x=THREE.MathUtils.lerp(minX,maxX,col/columns)+(boardwalk?coast(z)+deck.offset:0),y=Math.max(terrainHeight(x,z)+ROAD_SURFACE,deck.minimum);positions.push(x,y,z);uv.push(x/3,z/3);
+      if(row<rows&&col<columns){const a=row*(columns+1)+col,b=a+columns+1;indices.push(a,b,a+1,a+1,b,b+1);}
+    }
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const mesh=new THREE.Mesh(g,wood);mesh.name='Grounded '+deck.kind;mesh.receiveShadow=true;group.add(mesh);
+  }
+  for(const {a,b} of world.life.rails){addBeam({...a,y:a.y+.9},{...b,y:b.y+.9},white);addBox(.12,.9,.12,white,a.x,a.y+.45,a.z);const bottom=terrainHeight(a.x,a.z)-.4;addBox(.22,a.y-bottom,.22,wood,a.x,(a.y+bottom)/2,a.z);}
   // Airfield and hangars are reachable from East Gate.
   for(let z=-330;z<20;z+=22)addBox(1.2,.04,12,white,1080,terrainHeight(1080,z)+.18,z);
   // Instanced palms with curved fronds, plus rounded inland trees.
@@ -107,13 +121,15 @@ float wave=sin(p.x*.13+p.z*.19+time)*sin(p.x*.024-p.z*.04+time*.4);float glint=p
   for(let i=0;i<=8;i++){const t=i/8,w=Math.sin(t*Math.PI)*.32,y=1.4*Math.sin(t*2.4)-t*.6;lp.push(-w,y,t*4,w,y,t*4);if(i){const a=(i-1)*2;li.push(a,a+2,a+1,a+1,a+2,a+3);}}
   const leafGeo=new THREE.BufferGeometry();leafGeo.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));leafGeo.setIndex(li);leafGeo.computeVertexNormals();leafMat.side=THREE.DoubleSide;
   const palms=[];
+  const coastRoad=world.roads.find(r=>r.id==='coast');for(let s=35;s<coastRoad.length;s+=34){const f=coastRoad.frame(s);if(!beachfront(f)||inJunction(f,coastRoad))continue;for(const side of[-1,1])palms.push({x:f.x+f.nx*(coastRoad.width/2+10)*side,z:f.z+f.nz*(coastRoad.width/2+10)*side,h:8+random()*3});}
   for(let z=-350;z<1050;z+=37)for(const x of[-1030,-955,-745,-695]){const r=world.nearestRoad(x,z);if(!r||r.distance>r.road.width/2+3)palms.push({x,z,h:8+random()*4});}
   for(let i=0;i<80;i++){const x=random()*1500-650,z=random()*1200-350,r=world.nearestRoad(x,z);if(!r||r.distance>25)palms.push({x,z,h:8+random()*3});}
+  for(let i=palms.length-1;i>=0;i--){const p=palms[i];if(world.surface(p.x,p.z).road==='Waterfront promenade'||world.buildings.some(b=>Math.abs(b.x-p.x)<b.w/2+3&&Math.abs(b.z-p.z)<b.d/2+3)||world.regionItems.some(r=>r.site!=='landscape'&&Math.hypot(r.x-p.x,r.z-p.z)<r.r+3)||world.life.props.some(r=>Math.abs(r.x-p.x)<r.w/2+2&&Math.abs(r.z-p.z)<r.d/2+2))palms.splice(i,1);}
   const trunks=new THREE.InstancedMesh(palmTrunk,trunkMat,palms.length),leaves=new THREE.InstancedMesh(leafGeo,leafMat,palms.length*7),o=new THREE.Object3D();
   palms.forEach((p,i)=>{world.addSceneryCollider?.(p.x,p.z,.32,'palm');const y=terrainHeight(p.x,p.z);o.position.set(p.x,y+p.h/2,p.z);o.scale.set(1,p.h,1);o.rotation.set(0,0,.035*Math.sin(i));o.updateMatrix();trunks.setMatrixAt(i,o.matrix);
     for(let j=0;j<7;j++){o.position.set(p.x,y+p.h,p.z);o.scale.set(1,1,1);o.rotation.set(0,j*Math.PI*2/7+i,0);o.updateMatrix();leaves.setMatrixAt(i*7+j,o.matrix);}});
   trunks.userData.range=850;leaves.userData.range=850;trunks.castShadow=true;leaves.castShadow=true;group.add(trunks,leaves);
-  const trees=[];for(let i=0;i<600;i++){const x=random()*2800-950,z=-500-random()*1500,r=world.nearestRoad(x,z);if((!r||r.distance>r.road.width/2+6)&&terrainHeight(x,z)>8)trees.push({x,z,h:4+random()*9});}
+  const trees=[];for(let i=0;i<600;i++){const x=random()*2800-950,z=-500-random()*1500,r=world.nearestRoad(x,z);if((!r||r.distance>r.road.width/2+6)&&terrainHeight(x,z)>8&&!world.buildings.some(b=>Math.abs(b.x-x)<b.w/2+5&&Math.abs(b.z-z)<b.d/2+5)&&!world.regionItems.some(p=>p.site!=='landscape'&&Math.hypot(p.x-x,p.z-z)<p.r+8))trees.push({x,z,h:4+random()*9});}
   const crowns=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),city.leafMaterials[1],trees.length*2),stems=new THREE.InstancedMesh(palmTrunk,trunkMat,trees.length);
   trees.forEach((t,i)=>{world.addSceneryCollider?.(t.x,t.z,.25,'inland-tree');const y=terrainHeight(t.x,t.z);for(let j=0;j<2;j++){o.position.set(t.x+Math.sin(i*2.4+j*3)*t.h*.12,y+t.h*(.58+j*.17),t.z+Math.cos(i*2.4+j*3)*t.h*.12);o.scale.set(t.h*(.33-j*.05),t.h*.37,t.h*(.31-j*.03));o.rotation.set(0,i+j,0);o.updateMatrix();crowns.setMatrixAt(i*2+j,o.matrix);}o.position.set(t.x,y+t.h*.3,t.z);o.rotation.set(0,i,0);o.scale.set(.6,t.h*.6,.6);o.updateMatrix();stems.setMatrixAt(i,o.matrix);});crowns.userData.range=900;stems.userData.range=900;crowns.castShadow=true;group.add(crowns,stems);
   // Original roadside businesses and highway destination boards.
@@ -127,5 +143,6 @@ float wave=sin(p.x*.13+p.z*.19+time)*sin(p.x*.024-p.z*.04+time*.4);float glint=p
   const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,32,20),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,depthTest:false,uniforms:{top:{value:new THREE.Color(0x6da2c6)},bottom:{value:new THREE.Color(0xe1d9be)}},vertexShader:'varying float h;void main(){h=normalize(position).y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying float h;uniform vec3 top;uniform vec3 bottom;void main(){gl_FragColor=vec4(mix(bottom,top,pow(max(0.,h),.65)),1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));sky.renderOrder=-1000;sky.userData.alwaysVisible=true;group.add(sky);
   const sunDisk=new THREE.Mesh(new THREE.SphereGeometry(65,24,16),new THREE.MeshBasicMaterial({color:0xffe8b1}));sunDisk.userData.alwaysVisible=true;sunDisk.position.set(-1800,1600,-3500);group.add(sunDisk);
   const visibility=streamStaticWorld(group);
-  return {group,visibility,city,regions,regionStats:regions.stats,cityStats:city.stats,surfaces:{asphalt,terrain:terrain.material,sizeX,sizeZ},setSky(top,bottom){sky.material.uniforms.top.value.set(top);sky.material.uniforms.bottom.value.set(bottom);waterMaterial.uniforms.sky.value.set(bottom);},update(time,camera){waterMaterial.uniforms.time.value=time;if(camera)sky.position.copy(camera.position);},stats:{buildings:world.buildings.length,roadKm:world.roads.reduce((s,r)=>s+r.length,0)/1000,palms:palms.length}};
+  const population=buildPedestrians(group,world);
+  return {group,visibility,population,city,regions,regionStats:regions.stats,cityStats:city.stats,surfaces:{asphalt,terrain:terrain.material,sizeX,sizeZ},setSky(top,bottom){sky.material.uniforms.top.value.set(top);sky.material.uniforms.bottom.value.set(bottom);waterMaterial.uniforms.sky.value.set(bottom);},update(time,camera){waterMaterial.uniforms.time.value=time;if(camera)sky.position.copy(camera.position);},stats:{buildings:world.buildings.length,roadKm:world.roads.reduce((s,r)=>s+r.length,0)/1000,palms:palms.length}};
 }

@@ -19,7 +19,7 @@ export function createRegionLayout(world,height,coast,random){
     }
     add('surfboards',shore+107,z-11,2,Math.PI/2,false,site);add('shower',shore+114,z-13,1,0,false,site);
     add('kiosk',coast(z+31)+106,z+31,4,Math.PI/2,true,site);add('picnic',coast(z+40)+113,z+40,3,0,false,site);
-    add('volleyball',coast(z-43)+85,z-43,9,0,false,site);
+    add('volleyball',coast(z-43)+76,z-43,9,0,false,site);
   }
   const ridge=world.roads.find(r=>r.id==='ridge');
   // Each mountain stop has a signed turnout, a footpath and an observation deck.
@@ -51,6 +51,14 @@ export function createRegionLayout(world,height,coast,random){
       const along=(random()-.5)*110,off=65+random()*85,x=f.x+f.tx*along+f.nx*side*off,z=f.z+f.tz*along+f.nz*side*off;
       if(height(x,z)<25||items.some(i=>i.site!=='landscape'&&Math.hypot(i.x-x,i.z-z)<i.r+25)||items.some(i=>Math.hypot(i.x-x,i.z-z)<5))continue;
       add('pine',x,z,2.8,random()*6.28,false,'landscape',18);
+    }
+  }
+  // Continuous woodland edges replace long bare stretches between viewpoints.
+  for(let distance=60;distance<ridge.length-40;distance+=36){const f=ridge.frame(distance);
+    for(const side of[-1,1])for(const off of[24,37,53,72]){
+      const along=(random()-.5)*26,x=f.x+f.tx*along+f.nx*side*(off+random()*7),z=f.z+f.tz*along+f.nz*side*(off+random()*7);
+      if(height(x,z)<15||items.some(p=>p.site!=='landscape'&&Math.hypot(p.x-x,p.z-z)<p.r+18)||items.some(p=>Math.hypot(p.x-x,p.z-z)<4.2))continue;
+      add(random()>.73?'birch':'pine',x,z,2.8,random()*6.28,false,'landscape',9);
     }
   }
   return items;

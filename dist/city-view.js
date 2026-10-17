@@ -1,6 +1,7 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight,seeded} from './world-data.js?v=road-depth-7';
-import {createFacadeLibrary} from './facade-materials.js?v=road-depth-7';
+import {terrainHeight,seeded} from './world-data.js?v=populated-8';
+import {createFacadeLibrary} from './facade-materials.js?v=populated-8';
+import {drawDistrictLife} from './district-life.js?v=populated-8';
 
 // Street-front architecture has separate silhouettes and human-scale floors.
 // Static faces are merged by material; repeated trim and furniture is instanced.
@@ -128,7 +129,8 @@ export function buildCity(scene,world){
     }
     if(item.type==='bike-rack'){for(const dx of[-.8,0,.8]){B(.055,.8,.055,dark,dx,.4,-.4);B(.055,.8,.055,dark,dx,.4,.4);B(.055,.055,.85,dark,dx,.8,0);}B(2,.1,.08,dark,0,.08,-.4);}
   }
+  const life=drawDistrictLife(world,{box,column,crown,put,roof,materials:{stone,concrete,dark,wood,white,teal,red,yellow,green,grass,glass,asphalt}});
   for(const [geometry,byMaterial] of batches)for(const [material,matrices] of byMaterial){const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.castShadow=![glass,water,grass,asphalt].includes(material);mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);}
   for(const [material,f] of faces){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(f.p,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(f.n,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(f.uv,2));geometry.setIndex(f.i);geometry.computeBoundingSphere();const mesh=new THREE.Mesh(geometry,material);mesh.receiveShadow=true;group.add(mesh);}
-  return {group,facades,leafMaterials,stats:{buildings:world.buildings.length,types:new Set(world.buildings.map(b=>b.type)).size,balconies,streetTrees,props,blocks:world.blocks.length,facadeVariants:facades.count,streetDetails:world.streetDetails.length}};
+  return {group,facades,leafMaterials,stats:{buildings:world.buildings.length,types:new Set(world.buildings.map(b=>b.type)).size,balconies,streetTrees,props,blocks:world.blocks.length,facadeVariants:facades.count,streetDetails:world.streetDetails.length,life}};
 }

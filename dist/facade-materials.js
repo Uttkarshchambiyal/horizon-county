@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import {seeded} from './world-data.js?v=road-depth-7';
+import {seeded} from './world-data.js?v=populated-8';
 
 // Four floors and bays per atlas break the one-identical-window repetition.
 // Photos supply masonry grain; window masks keep glass smooth and reflective.

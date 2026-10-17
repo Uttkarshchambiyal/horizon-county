@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight} from './world-data.js?v=road-depth-7';
-export function buildRegions(scene,world){
+import {terrainHeight} from './world-data.js?v=populated-8';
+export function buildRegions(scene,world,foliage=[]){
   const group=new THREE.Group();group.name='Pacific shore and Crestline destinations';scene.add(group);
   const geometries={box:new THREE.BoxGeometry(1,1,1),pole:new THREE.CylinderGeometry(1,1,1,10),cone:new THREE.ConeGeometry(1,1,10),umbrella:new THREE.ConeGeometry(1,1,12),rock:new THREE.IcosahedronGeometry(1,1),board:new THREE.CapsuleGeometry(.25,2,4,8)},batches=new Map(),o=new THREE.Object3D();
   const m=(color,roughness=.85,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
@@ -55,6 +55,7 @@ export function buildRegions(scene,world){
     if(i.type==='pine'){
       const h=7+i.seed%8;pole(i,.22,h*.7,wood,0,h*.35,0);for(let n=0;n<3;n++)put('cone',greens[(n+i.seed)%3],i,0,h*(.4+n*.2),0,h*(.23-n*.035),h*.55,h*(.23-n*.035),0,n*.8);
     }
+    if(i.type==='birch'){const h=7+i.seed%7;pole(i,.17,h*.72,white,0,h*.36,0);for(let n=0;n<2;n++)put('rock',foliage[(i.seed+n)%foliage.length]||greens[n],i,Math.sin(i.seed+n)*1.1,h*(.62+n*.18),Math.cos(i.seed+n)*.8,2.5-n*.4,h*.25,2.6-n*.35,0,i.seed);}
     if(i.type==='rock')put('rock',rock,i,0,i.r*.48,0,i.r,i.r*.7,i.r*.85,.15,i.seed,.1);
   }
   for(const [geometry,by] of batches)for(const [material,matrices] of by){const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);matrices.forEach((m,index)=>mesh.setMatrixAt(index,m));mesh.userData.range=850;mesh.castShadow=true;mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);}

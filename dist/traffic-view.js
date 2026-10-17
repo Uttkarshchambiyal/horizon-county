@@ -1,20 +1,20 @@
 import * as THREE from './vendor/three.module.min.js';
-import {fleetModel,FLEET_TYPES} from './traffic-models.js?v=road-depth-7';
-import {signalState} from './traffic.js?v=road-depth-7';
-import {terrainHeight} from './world-data.js?v=road-depth-7';
-import {enableInstanceFade,distanceFade} from './render-quality.js?v=road-depth-7';
+import {fleetModel,fleetProxy,FLEET_TYPES} from './traffic-models.js?v=populated-8';
+import {signalState} from './traffic.js?v=populated-8';
+import {terrainHeight} from './world-data.js?v=populated-8';
+import {enableInstanceFade,distanceFade} from './render-quality.js?v=populated-8';
 
 export function buildTrafficView(scene,world,traffic){
   const group=new THREE.Group();group.name='Local animated traffic fleet';scene.add(group);
   const paints=[0xaeb4ae,0x5b7b8e,0x8c4c42,0x303c48,0x858d72,0xc6b599];
-  const parked=world.parkedCars.map((p,i)=>({...p,y:p.y+.61,heading:0,type:FLEET_TYPES[i%FLEET_TYPES.length],paint:paints[p.color],parked:true}));
+  const parked=world.parkedCars.map((p,i)=>({...p,y:p.y+.61,heading:p.heading||0,type:FLEET_TYPES[i%FLEET_TYPES.length],paint:paints[p.color],parked:true}));
   const object=new THREE.Object3D(),wheel=new THREE.Object3D(),color=new THREE.Color(),wheelMatrix=new THREE.Matrix4(),pools=[];
   let night=false,lastSignal='',lastNight=false,focus={x:world.spawns[0].x,z:world.spawns[0].z};
   for(const type of FLEET_TYPES){
     const model=fleetModel(type),cars=[...parked.filter(c=>c.type===type),...traffic.cars.filter(c=>c.type===type)];
     const parts=[...model.parts,...model.wheelParts.map(p=>({...p,wheel:true}))].map(part=>{
       const mesh=new THREE.InstancedMesh(part.geometry,part.material,cars.length*(part.wheel?4:1));mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);if(part.paint||part.tail){mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(mesh.instanceMatrix.count*3).fill(1),3);mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);}mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;const fade=enableInstanceFade(mesh);group.add(mesh);return {...part,mesh,fade};
-    });pools.push({cars,parts,model,parkedCount:0});
+    });const proxyMesh=new THREE.InstancedMesh(fleetProxy(model),new THREE.MeshStandardMaterial({vertexColors:true,roughness:.6,metalness:.2}),cars.length);proxyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);proxyMesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(cars.length*3).fill(1),3);proxyMesh.frustumCulled=false;const proxy={mesh:proxyMesh,fade:enableInstanceFade(proxyMesh)};group.add(proxyMesh);pools.push({cars,parts,model,proxy,parkedCount:0,parkedProxyCount:0});
   }
   const signals=[],posts=[],heads=[];
   for(const x of world.xs)for(const z of world.zs)for(const axis of['ns','ew'])for(const side of[-1,1]){
@@ -33,7 +33,7 @@ export function buildTrafficView(scene,world,traffic){
   signals.forEach((s,i)=>bulbs.setMatrixAt(i,s.matrix));bulbs.computeBoundingSphere();group.add(bulbs);
   const stats={moving:traffic.cars.length,parked:parked.length,models:FLEET_TYPES.length,visibleCars:0,drawCalls:pools.reduce((n,p)=>n+p.parts.length,0)};
   let parkedX=Infinity,parkedZ=Infinity,parkedNight;
-  function writeCar(c,index,parts,model,alpha,distance){
+  function pose(c,model,alpha){
     const prev=c.previous||c,t=c.parked?1:alpha;
     object.position.set(THREE.MathUtils.lerp(prev.x,c.x,t),THREE.MathUtils.lerp(prev.y,c.y,t),THREE.MathUtils.lerp(prev.z,c.z,t));
     const heading=prev.heading+Math.atan2(Math.sin(c.heading-prev.heading),Math.cos(c.heading-prev.heading))*t;
@@ -42,7 +42,9 @@ export function buildTrafficView(scene,world,traffic){
       if(!c.parked){const route=traffic.routes[c.route],a=route.frame(c.s-1),b=route.frame(c.s+1);c.renderSteering=Math.atan(model.spec.wheelbase*Math.atan2(Math.sin(b.heading-a.heading),Math.cos(b.heading-a.heading))/2);}
     }
     object.rotation.set(c.pitch,heading,0,'YXZ');object.updateMatrix();
-    const fade=distanceFade(distance,c.parked?300:420);
+  }
+  function writeCar(c,index,parts,model,alpha,distance){
+    pose(c,model,alpha);const fade=distanceFade(distance,c.parked?220:420)*(1-THREE.MathUtils.smoothstep(distance,120,160));
     for(const part of parts){
       if(!part.wheel){part.fade.array[index]=fade;part.mesh.setMatrixAt(index,object.matrix);}
       else model.wheels.forEach((p,i)=>{
@@ -57,15 +59,17 @@ export function buildTrafficView(scene,world,traffic){
     const refreshParked=Math.hypot(focus.x-parkedX,focus.z-parkedZ)>8||parkedNight!==night;
     if(refreshParked){parkedX=focus.x;parkedZ=focus.z;parkedNight=night;}
     for(const pool of pools){
-      const {cars,parts,model}=pool;let index=refreshParked?0:pool.parkedCount;
-      if(refreshParked){for(const c of cars){if(!c.parked)continue;const distance=Math.hypot(c.x-focus.x,c.z-focus.z);if(distance<=300)writeCar(c,index++,parts,model,1,distance);}pool.parkedCount=index;}
-      if(traffic.enabled)for(const c of cars){if(c.parked)continue;const distance=Math.hypot(c.x-focus.x,c.z-focus.z);if(distance<=420)writeCar(c,index++,parts,model,alpha,distance);}
-      stats.visibleCars+=index;
-      for(const part of parts){
-        const multiplier=part.wheel?4:1,start=refreshParked?0:pool.parkedCount*multiplier,count=index*multiplier;
+      const {cars,parts,model,proxy}=pool;let index=refreshParked?0:pool.parkedCount,lowIndex=refreshParked?0:pool.parkedProxyCount,visible=0;
+      function write(c,distance){
+        if(distance<=160)writeCar(c,index++,parts,model,alpha,distance);
+        if(distance>120){pose(c,model,alpha);proxy.mesh.setMatrixAt(lowIndex,object.matrix);proxy.mesh.setColorAt(lowIndex,color.set(c.paint));proxy.fade.array[lowIndex++]=-distanceFade(distance,c.parked?220:420)*THREE.MathUtils.smoothstep(distance,120,160);}
+      }
+      if(refreshParked){for(const c of cars){if(!c.parked)continue;const distance=Math.hypot(c.x-focus.x,c.z-focus.z);if(distance<=220)write(c,distance);}pool.parkedCount=index;pool.parkedProxyCount=lowIndex;}
+      for(const c of cars){const distance=Math.hypot(c.x-focus.x,c.z-focus.z);if(c.parked){if(distance<=220)visible++;}else if(traffic.enabled&&distance<=420){write(c,distance);visible++;}}
+      stats.visibleCars+=visible;
+      for(const part of[...parts,proxy]){
+        const low=part===proxy,multiplier=part.wheel?4:1,start=refreshParked?0:(low?pool.parkedProxyCount:pool.parkedCount)*multiplier,count=(low?lowIndex:index)*multiplier;
         part.mesh.count=count;part.mesh.visible=count>0;
-        // Parked matrices stay in the buffer prefix. Only moving vehicles are
-        // uploaded on an ordinary frame; empty/static pools upload nothing.
         if(count>start)for(const [attribute,size] of[[part.mesh.instanceMatrix,16],[part.mesh.instanceColor,3],[part.fade,1]])if(attribute){attribute.clearUpdateRanges();attribute.addUpdateRange(start*size,(count-start)*size);attribute.needsUpdate=true;}
       }
     }

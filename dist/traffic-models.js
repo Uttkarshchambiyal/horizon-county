@@ -1,8 +1,8 @@
 import * as THREE from './vendor/three.module.min.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
 
-export {FLEET_TYPES} from './fleet-data.js?v=road-depth-7';
-import {FLEET_FOOTPRINTS} from './fleet-data.js?v=road-depth-7';
+export {FLEET_TYPES} from './fleet-data.js?v=populated-8';
+import {FLEET_FOOTPRINTS} from './fleet-data.js?v=populated-8';
 const definitions={
   hatchback:{radius:.31,wheelbase:2.42,height:1.48,cabin:[[-1.04,.82],[-.65,1.39],[.63,1.43],[1.27,.86]]},
   sedan:{radius:.34,wheelbase:2.8,height:1.45,cabin:[[-1.2,.8],[-.57,1.39],[.66,1.4],[1.46,.82]]},
@@ -61,4 +61,13 @@ export function fleetModel(type){
   let spoke=mergeGeometries(spokes.map(g=>{const f=g.toNonIndexed();f.deleteAttribute('uv');return f;}));
   wheelParts.push({geometry:tire,material:rubber},{geometry:mergeGeometries([rim.toNonIndexed(),rimBack.toNonIndexed(),hub.toNonIndexed(),spoke]),material:alloy});
   return {spec,wheels,wheelParts,parts:[...parts].map(([material,geometries])=>({geometry:mergeGeometries(geometries),material,paint:material===paint,tail:material===tail}))};
+}
+// Keep the exact body silhouette at distance, with one colour-aware draw and
+// six-sided fixed tires. Close cars retain independent, animated wheel parts.
+export function fleetProxy(model){
+  const geometries=[];
+  function add(source,colour){const g=source.index?source.toNonIndexed():source.clone();g.deleteAttribute('uv');const c=new THREE.Color(colour),colours=new Float32Array(g.attributes.position.count*3);for(let i=0;i<colours.length;i+=3){colours[i]=c.r;colours[i+1]=c.g;colours[i+2]=c.b;}g.setAttribute('color',new THREE.BufferAttribute(colours,3));geometries.push(g);}
+  for(const part of model.parts)add(part.geometry,part.paint?0xffffff:part.tail?0x7e2424:part.material.color);
+  for(const p of model.wheels)add(new THREE.CylinderGeometry(model.spec.radius,model.spec.radius,.24,6).rotateZ(Math.PI/2).translate(...p),0x25282b);
+  const geometry=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());return geometry;
 }
