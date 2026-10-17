@@ -1,21 +1,22 @@
+import {finishPlayerWheels} from './wheel-finish.js?v=axle-steering-11';
 import * as THREE from './vendor/three.module.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
-import {VEHICLES,vehicleSpec} from './vehicle-data.js?v=real-fleet-10';
-import {fleetModel} from './traffic-models.js?v=real-fleet-10';
-import {mountSportsCar} from './sports-car.js?v=real-fleet-10';
+import {VEHICLES,vehicleSpec} from './vehicle-data.js?v=axle-steering-11';
+import {fleetModel} from './traffic-models.js?v=axle-steering-11';
+import {mountSportsCar} from './sports-car.js?v=axle-steering-11';
 export {VEHICLES,vehicleSpec};
 function disposeTree(root,keep=new Set()){
   const geometries=new Set(),materials=new Set(),textures=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m&&!keep.has(m))materials.add(m);});
   geometries.forEach(g=>g.dispose());for(const m of materials){for(const value of Object.values(m))if(value?.isTexture)textures.add(value);m.dispose();}textures.forEach(t=>t.dispose());
 }
-function clearVehicle(vehicle){disposeTree(vehicle.car,new Set([vehicle.bodyMat,vehicle.tailMat]));vehicle.car.clear();vehicle.wheels.length=0;vehicle.steerWheels.length=0;vehicle.wheelCenters.length=0;vehicle.flames.length=0;vehicle.lampMaterials=[];for(const key of ['map','normalMap','roughnessMap','metalnessMap','aoMap']){vehicle.bodyMat[key]?.dispose();vehicle.bodyMat[key]=null;}vehicle.bodyMat.vertexColors=false;vehicle.bodyMat.needsUpdate=true;}
+function clearVehicle(vehicle){disposeTree(vehicle.car,new Set([vehicle.bodyMat,vehicle.tailMat]));vehicle.car.clear();vehicle.wheels.length=0;vehicle.steerWheels.length=0;vehicle.wheelCenters.length=0;vehicle.flames.length=0;vehicle.wheelBlur=[];vehicle.wheelRadii=[];vehicle.lampMaterials=[];for(const key of ['map','normalMap','roughnessMap','metalnessMap','aoMap']){vehicle.bodyMat[key]?.dispose();vehicle.bodyMat[key]=null;}vehicle.bodyMat.vertexColors=false;vehicle.bodyMat.needsUpdate=true;}
 function addWheel(vehicle,group,position,index){const pivot=new THREE.Group();pivot.position.fromArray(position);pivot.name=['steer_fl','steer_fr','axle_rl','axle_rr'][index];pivot.add(group);group.position.set(0,0,0);vehicle.car.add(pivot);vehicle.wheels.push(group);vehicle.wheelCenters.push(pivot);if(index<2)vehicle.steerWheels.push(pivot);return pivot;}
 export function mountTrafficVehicle(vehicle){
   clearVehicle(vehicle);const model=fleetModel(vehicle.spec.id),body=new THREE.Group();vehicle.car.add(body);vehicle.bodyPivot=body;
   vehicle.bodyMat.vertexColors=true;vehicle.bodyMat.needsUpdate=true;
   for(const part of model.parts){const material=part.paint?vehicle.bodyMat:part.tail?vehicle.tailMat:part.material.clone(),mesh=new THREE.Mesh(part.geometry.clone(),material);mesh.castShadow=true;mesh.receiveShadow=true;body.add(mesh);}
   model.wheels.forEach((position,index)=>{const group=new THREE.Group();for(const part of model.wheelParts){const mesh=new THREE.Mesh(part.geometry.clone(),part.material.clone());mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}addWheel(vehicle,group,position,index);});
-  vehicle.assetReady=false;vehicle.assetLevel='traffic';vehicle.assetName=vehicle.spec.name;return vehicle;
+  finishPlayerWheels(vehicle);vehicle.assetReady=false;vehicle.assetLevel='traffic';vehicle.assetName=vehicle.spec.name;return vehicle;
 }
 export function createVehicle(parent,id='clubsport'){
   const spec=vehicleSpec(id),car=new THREE.Group();car.name=spec.name;parent.add(car);
@@ -41,7 +42,7 @@ export function mountDetailedVehicle(vehicle,gltf){
     const wheel=model.getObjectByName(name),position=wheel.position.toArray();wheel.removeFromParent();const pivot=addWheel(vehicle,wheel,position,index);
     for(const part of [...wheel.children])if(/caliper|brake/i.test(part.name)){vehicle.car.updateMatrixWorld(true);pivot.attach(part);}
   }
-  vehicle.assetReady=true;vehicle.assetLevel='detailed';vehicle.assetName=vehicle.spec.name;vehicle.car.updateMatrixWorld(true);return vehicle;
+  vehicle.assetReady=true;vehicle.assetLevel='detailed';vehicle.assetName=vehicle.spec.name;vehicle.car.updateMatrixWorld(true);finishPlayerWheels(vehicle);return vehicle;
 }
 // One download at a time. A selection change cancels the old fetch; at most
 // three detailed cars are kept resident, with identical real-mesh fallbacks.

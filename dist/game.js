@@ -1,24 +1,24 @@
 import * as THREE from './vendor/three.module.min.js';
-import {addReflections} from './car.js?v=real-fleet-10';
-import {createDrivingControls} from './controls.js?v=real-fleet-10';
-import {makeOpenWorld,terrainHeight,coast,clamp} from './world-data.js?v=real-fleet-10';
-import {buildOpenWorld} from './world-view.js?v=real-fleet-10';
-import {newDriveState,stepDrive,recoverCar} from './driving.js?v=real-fleet-10';
-import {VEHICLES,createVehicle,createGarageLoader} from './vehicles.js?v=real-fleet-10';
-import {makeTraffic,stepTraffic,collideTraffic} from './traffic.js?v=real-fleet-10';
-import {buildTrafficView} from './traffic-view.js?v=real-fleet-10';
-import {loadWorldAssets} from './assets.js?v=real-fleet-10';
-import {animateVehicle} from './vehicle-motion.js?v=real-fleet-10';
-import {createEngineAudio,engineTelemetry} from './engine-audio.js?v=real-fleet-10';
-import {createActivities,createCareer} from './career.js?v=real-fleet-10';
-import {createRoutePlanner} from './navigation.js?v=real-fleet-10';
-import {createCareerUI} from './career-ui.js?v=real-fleet-10';
-import {buildActivityView} from './activity-view.js?v=real-fleet-10';
-import {createPerformanceCapture} from './performance-capture.js?v=real-fleet-10';
-import {createPerformanceUI} from './performance-ui.js?v=real-fleet-10';
-import {LIGHTING_MOODS} from './lighting.js?v=real-fleet-10';
-import {reactToHorn} from './traffic.js?v=real-fleet-10';
-import {renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias} from './render-quality.js?v=real-fleet-10';
+import {addReflections} from './car.js?v=axle-steering-11';
+import {createDrivingControls} from './controls.js?v=axle-steering-11';
+import {makeOpenWorld,terrainHeight,coast,clamp} from './world-data.js?v=axle-steering-11';
+import {buildOpenWorld} from './world-view.js?v=axle-steering-11';
+import {newDriveState,stepDrive,recoverCar} from './driving.js?v=axle-steering-11';
+import {VEHICLES,createVehicle,createGarageLoader} from './vehicles.js?v=axle-steering-11';
+import {makeTraffic,stepTraffic,collideTraffic} from './traffic.js?v=axle-steering-11';
+import {buildTrafficView} from './traffic-view.js?v=axle-steering-11';
+import {loadWorldAssets} from './assets.js?v=axle-steering-11';
+import {animateVehicle} from './vehicle-motion.js?v=axle-steering-11';
+import {createEngineAudio,engineTelemetry} from './engine-audio.js?v=axle-steering-11';
+import {createActivities,createCareer} from './career.js?v=axle-steering-11';
+import {createRoutePlanner} from './navigation.js?v=axle-steering-11';
+import {createCareerUI} from './career-ui.js?v=axle-steering-11';
+import {buildActivityView} from './activity-view.js?v=axle-steering-11';
+import {createPerformanceCapture} from './performance-capture.js?v=axle-steering-11';
+import {createPerformanceUI} from './performance-ui.js?v=axle-steering-11';
+import {LIGHTING_MOODS} from './lighting.js?v=axle-steering-11';
+import {reactToHorn} from './traffic.js?v=axle-steering-11';
+import {renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias} from './render-quality.js?v=axle-steering-11';
 const $=id=>document.getElementById(id),canvas=$('world');
 let renderer;
 try{const context=canvas.getContext('webgl2',{antialias:true,powerPreference:'high-performance'}),reversedDepth=!!context?.getExtension?.('EXT_clip_control');renderer=new THREE.WebGLRenderer({canvas,context,antialias:true,reversedDepthBuffer:reversedDepth,logarithmicDepthBuffer:!reversedDepth,powerPreference:'high-performance'});}catch(error){$('loading').classList.add('hidden');$('fatal-error').classList.remove('hidden');$('error-message').textContent='This world needs a browser with WebGL and hardware acceleration.';throw error;}
@@ -51,7 +51,7 @@ let assetsStatus='loading';const worldAssetsPromise=loadWorldAssets(scene,render
 const headlights=[];
 for(const side of[-1,1]){const light=new THREE.SpotLight(0xe5f3ff,95,85,.48,.65,1.1);light.position.set(side*.7,.2,-2.3);light.target.position.set(side*2,-.4,-38);car.add(light,light.target);headlights.push(light);}
 const controls=createDrivingControls(),touch={left:false,right:false,throttle:false,brake:false,boost:false};
-let selected=0,state=newDriveState(world),previous={...state},mode='menu',cameraMode=0,cameraHeading=state.heading,time=0,populationTime=0,lastTime=0,accumulator=0,hudTime=0,toastTime=0;
+let selected=0,state=newDriveState(world),previous={...state,wheelDistances:[...state.wheelDistances]},mode='menu',cameraMode=0,cameraHeading=state.heading,time=0,populationTime=0,lastTime=0,accumulator=0,hudTime=0,toastTime=0;
 let muted=false,lights=false,lighting=0,waypoint=null,modeBeforeMap='menu',modeBeforeHelp='menu',modeBeforeGarage='menu',modeBeforeSettings='menu';
 const frameBudget=createFrameBudget();
 let cameraBack=10.5,measuredFps=0,acceleration=0,lastSpeed=0,lastIdleRender=0,renderDirty=true,wasPlaying=false,graphicsReady=false;
@@ -66,7 +66,7 @@ const audio=createEngineAudio();
 function initAudio(){audio.start();}
 function clearInput(){audio.silence();controls.clear();Object.keys(touch).forEach(k=>touch[k]=false);document.querySelectorAll('[data-control]').forEach(b=>b.classList.remove('pressed'));}
 function focusGame(){canvas.focus({preventScroll:true});}
-function sync(){state.tuning=career.effects(currentCar.spec.id);careerUI?.update(true);activityView.update(career,state,time);previous={...state};accumulator=0;trafficView.update(1,state);view.population.update(populationTime,state,{hornUntil,trafficTime:traffic.time,signalsEnabled:traffic.enabled});positionCar(0,1);updateCamera(1,true);view.visibility.update(state.x,state.z,preference.quality,true,camera,preference.quality==='auto'?frameBudget.status.tier:0);updateHUD();renderDirty=true;if(graphicsReady)renderer.render(scene,camera);}
+function sync(){state.tuning=career.effects(currentCar.spec.id);careerUI?.update(true);activityView.update(career,state,time);previous={...state,wheelDistances:[...state.wheelDistances]};accumulator=0;trafficView.update(1,state);view.population.update(populationTime,state,{hornUntil,trafficTime:traffic.time,signalsEnabled:traffic.enabled});positionCar(0,1);updateCamera(1,true);view.visibility.update(state.x,state.z,preference.quality,true,camera,preference.quality==='auto'?frameBudget.status.tier:0);updateHUD();renderDirty=true;if(graphicsReady)renderer.render(scene,camera);}
 function toast(title,sub='',duration=2.5){$('toast').textContent=title;if(sub){const small=document.createElement('small');small.textContent=sub;$('toast').appendChild(small);}$('toast').classList.add('visible');toastTime=duration;}
 function selectSpawn(index){selected=index;state=newDriveState(world,world.spawns[index],currentCar.spec.id);clearInput();sync();document.querySelectorAll('[data-spawn]').forEach(b=>{const on=+b.dataset.spawn===index;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});}
 function startDrive(){initAudio();clearInput();mode='playing';state=newDriveState(world,world.spawns[selected],currentCar.spec.id);document.body.classList.add('playing');$('menu').classList.add('hidden');$('drive-hud').classList.remove('hidden');$('pause-button').classList.remove('hidden');for(const id of['pause-overlay','map-overlay','help-overlay','garage-overlay','settings-overlay','jobs-overlay'])$(id).classList.add('hidden');cameraMode=0;sync();focusGame();toast('HORIZON COUNTY','WASD TO DRIVE / M TO EXPLORE THE MAP');}
@@ -88,7 +88,7 @@ function setVehicle(id){
   garage.forEach(v=>{v.car.visible=v===currentCar;});
   headlights.forEach(l=>{l.position.y=currentCar.spec.suv?.46:.21;l.position.z=-currentCar.spec.length/2-.05;});
   const paint=preference.paints[currentCar.spec.id];if(currentCar.spec.paintable!==false&&typeof paint==='string'&&/^#[0-9a-f]{6}$/i.test(paint))bodyMat.color.set(paint);
-  preference.vehicle=currentCar.spec.id;state.vehicleId=currentCar.spec.id;state.speed=0;state.steering=0;state.motionHeading=state.heading;state.steerAngle=0;state.yawRate=0;state.wheelTravel=0;state.verticalSpeed=0;state.reverseHold=0;state.longitudinalAcceleration=0;state.grounded=true;state.y=world.surface(state.x,state.z).height+.55;lastSpeed=0;acceleration=0;
+  preference.vehicle=currentCar.spec.id;state.vehicleId=currentCar.spec.id;state.speed=0;state.steering=0;state.motionHeading=state.heading;state.steerAngle=0;state.yawRate=0;state.wheelTravel=0;state.wheelDistances=[0,0,0,0];state.verticalSpeed=0;state.reverseHold=0;state.longitudinalAcceleration=0;state.grounded=true;state.y=world.surface(state.x,state.z).height+.55;lastSpeed=0;acceleration=0;
   $('car-name').textContent=currentCar.spec.name.toUpperCase();$('car-class').textContent=currentCar.spec.className;
   $('garage-description').textContent=currentCar.spec.description;
   document.querySelectorAll('[data-vehicle]').forEach(b=>{const active=b.dataset.vehicle===currentCar.spec.id;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
@@ -152,11 +152,11 @@ function drawMinimap(){const ctx=$('minimap').getContext('2d'),p=mapPoint(state.
 function positionCar(dt,forceAlpha){const alpha=forceAlpha??(mode==='playing'?clamp(accumulator*120,0,1):1),lerp=THREE.MathUtils.lerp;
   car.position.set(lerp(previous.x,state.x,alpha),lerp(previous.y,state.y,alpha),lerp(previous.z,state.z,alpha));
   car.rotation.order='YXZ';car.rotation.y=previous.heading+Math.atan2(Math.sin(state.heading-previous.heading),Math.cos(state.heading-previous.heading))*alpha;
-  const hx=-Math.sin(car.rotation.y),hz=-Math.cos(car.rotation.y),wb=currentCar.spec.wheelbase,track=currentCar.spec.track,front=world.surface(car.position.x+hx*wb/2,car.position.z+hz*wb/2).height,back=world.surface(car.position.x-hx*wb/2,car.position.z-hz*wb/2).height;
+  const hx=-Math.sin(car.rotation.y),hz=-Math.cos(car.rotation.y),wb=currentCar.spec.wheelbase,track=currentCar.spec.track,fz=-(currentCar.spec.wheels[0][2]+currentCar.spec.wheels[1][2])/2,rz=(currentCar.spec.wheels[2][2]+currentCar.spec.wheels[3][2])/2,front=world.surface(car.position.x+hx*fz,car.position.z+hz*fz).height,back=world.surface(car.position.x-hx*rz,car.position.z-hz*rz).height;
   const right=world.surface(car.position.x+Math.cos(car.rotation.y)*track/2,car.position.z-Math.sin(car.rotation.y)*track/2).height,left=world.surface(car.position.x-Math.cos(car.rotation.y)*track/2,car.position.z+Math.sin(car.rotation.y)*track/2).height;
   const pitch=state.grounded?Math.atan2(front-back,wb):Math.atan2(state.verticalSpeed,Math.max(8,Math.abs(state.speed))),roll=state.grounded?clamp(Math.atan2(right-left,track),-.3,.3):car.rotation.z;
   car.rotation.x=forceAlpha===1?pitch:THREE.MathUtils.damp(car.rotation.x,pitch,12,dt||.016);car.rotation.z=forceAlpha===1?roll:THREE.MathUtils.damp(car.rotation.z,roll,12,dt||.016);
-  animateVehicle(currentCar,{...state,steerAngle:lerp(previous.steerAngle||0,state.steerAngle||0,alpha),wheelTravel:lerp(previous.wheelTravel||0,state.wheelTravel||0,alpha)});
+  animateVehicle(currentCar,{...state,steerAngle:lerp(previous.steerAngle||0,state.steerAngle||0,alpha),wheelTravel:lerp(previous.wheelTravel||0,state.wheelTravel||0,alpha)},previous,alpha);
   if(currentCar.bodyPivot){currentCar.bodyPivot.rotation.x=THREE.MathUtils.damp(currentCar.bodyPivot.rotation.x,clamp((state.longitudinalAcceleration||0)*.0015,-.025,.025),6,dt||.016);currentCar.bodyPivot.rotation.z=THREE.MathUtils.damp(currentCar.bodyPivot.rotation.z,clamp(-(state.lateralAcceleration||0)*.001,-.022,.022),7,dt||.016);}
   const input=controls.read(touch);tailMat.emissiveIntensity=input.brake?5:1.5;for(const lamp of currentCar.lampMaterials||[])lamp.emissiveIntensity=tailMat.emissiveIntensity*.4;
   for(const flame of flames){flame.visible=mode==='playing'&&input.throttle&&input.boost&&state.speed>6&&state.boost>1;flame.scale.y=.85+Math.sin(time*39)*.15;}
@@ -187,7 +187,7 @@ function updateHUD(){careerUI.update();performanceUI.update();const input=contro
   $('waypoint-hud').classList.toggle('hidden',!waypoint);if(waypoint){const d=Math.hypot(waypoint.x-state.x,waypoint.z-state.z);$('waypoint-distance').textContent=d>1000?(d/1000).toFixed(2)+' KM':Math.round(d)+' M';if(d<20){waypoint=null;toast('WAYPOINT REACHED');}}
   drawMinimap();
 }
-function physics(dt){populationTime+=dt;incidentCooldown=Math.max(0,incidentCooldown-dt);Object.assign(previous,state);const impactSpeed=Math.abs(state.speed);stepTraffic(traffic,world,state,dt,view.population.nearby);for(const event of stepDrive(state,world,controls.read(touch),dt)){if(event==='recover'){career.recover();Object.assign(previous,state);toast('RETURNED TO THE ROAD','WATER RECOVERY');}else if(event==='collision'){career.incident();audio.effect('impact',impactSpeed/30);}else if(event==='land')audio.effect('impact',.25);}
+function physics(dt){populationTime+=dt;incidentCooldown=Math.max(0,incidentCooldown-dt);Object.assign(previous,state,{wheelDistances:[...state.wheelDistances]});const impactSpeed=Math.abs(state.speed);stepTraffic(traffic,world,state,dt,view.population.nearby);for(const event of stepDrive(state,world,controls.read(touch),dt)){if(event==='recover'){career.recover();Object.assign(previous,state,{wheelDistances:[...state.wheelDistances]});toast('RETURNED TO THE ROAD','WATER RECOVERY');}else if(event==='collision'){career.incident();audio.effect('impact',impactSpeed/30);}else if(event==='land')audio.effect('impact',.25);}
   if(collideTraffic(state,traffic)&&impactSpeed>4){audio.effect('impact',impactSpeed/30);if(incidentCooldown===0){career.incident();incidentCooldown=1;}}career.update(dt,state);if(state.grounded)state.y=Math.max(state.y,world.surface(state.x,state.z).height+.55);acceleration=(state.speed-lastSpeed)/dt;lastSpeed=state.speed;
   for(const l of world.landmarks)if(!visited.has(l.name)&&Math.hypot(state.x-l.x,state.z-l.z)<38){visited.add(l.name);toast(l.name.toUpperCase(),'NEW PLACE DISCOVERED');try{localStorage.setItem('horizon-world-discoveries-v1',JSON.stringify([...visited]));}catch{}}
 }

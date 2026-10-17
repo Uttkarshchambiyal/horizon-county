@@ -1,3 +1,4 @@
+import {finishPlayerWheels} from './wheel-finish.js?v=axle-steering-11';
 import * as THREE from './vendor/three.module.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 
@@ -6,7 +7,7 @@ import {GLTFLoader} from './vendor/GLTFLoader.js';
 export function mountSportsCar(vehicle,gltf){
   const root=vehicle.car,model=gltf.scene,keep=new Set([vehicle.bodyMat,vehicle.tailMat]),geometries=new Set(),materials=new Set();
   for(const c of [...root.children]){c.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material&&!keep.has(o.material))materials.add(o.material);});root.remove(c);}
-  geometries.forEach(g=>g.dispose());materials.forEach(m=>{m.map?.dispose();m.dispose();});
+  geometries.forEach(g=>g.dispose());materials.forEach(m=>{for(const value of Object.values(m))if(value?.isTexture)value.dispose();m.dispose();});
   model.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(model),center=bounds.getCenter(new THREE.Vector3());
   model.position.set(-center.x,-bounds.min.y-.55,-center.z);
@@ -31,6 +32,7 @@ export function mountSportsCar(vehicle,gltf){
   for(let y=0;y<256;y+=12)for(let x=0;x<256;x+=32){tx.fillStyle='#454545';tx.beginPath();tx.moveTo(x,y);tx.lineTo(x+13,y+5);tx.lineTo(x+13,y+8);tx.lineTo(x,y+3);tx.fill();}
   const treadMap=new THREE.CanvasTexture(tread);treadMap.wrapS=treadMap.wrapT=THREE.RepeatWrapping;treadMap.repeat.set(5,1);
   const rubber=new THREE.MeshStandardMaterial({color:0x202326,roughness:.94,bumpMap:treadMap,bumpScale:.008});
+  rubber.name='Tires';
   const alloy=new THREE.MeshStandardMaterial({color:0xb2b7bb,metalness:.96,roughness:.28});
   for(const name of ['rim_fl','rim_fr','rim_rl','rim_rr'])model.getObjectByName(name).material=alloy;
   model.traverse(o=>{if(o.isMesh&&o.material?.name==='Tires')o.material=rubber;});
@@ -46,7 +48,7 @@ export function mountSportsCar(vehicle,gltf){
 
   vehicle.flames.length=0;
   vehicle.assetReady=true;vehicle.assetName='Ferrari 458 Italia';model.updateMatrixWorld(true);
-  return vehicle;
+  finishPlayerWheels(vehicle);return vehicle;
 }
 export async function loadSportsCar(vehicle,onProgress){
   const gltf=await new GLTFLoader().loadAsync('./assets/cars/ferrari-458.glb',onProgress);

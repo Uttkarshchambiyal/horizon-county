@@ -57,8 +57,8 @@ The deterministic submission check (57-degree camera, 1.6 aspect, Smooth, initia
 
 | Camera | Activities update triangles / calls | Real-car update triangles / calls |
 | --- | --- | --- |
-| Downtown | 292,874 / 162 | 296,965 / 144 |
-| Pacific Beach | 258,232 / 150 | 262,238 / 136 |
+| Downtown | 292,874 / 162 | 298,689 / 144 |
+| Pacific Beach | 258,232 / 150 | 262,842 / 136 |
 | Crestline Hills | 181,104 / 66 | 181,104 / 66 |
 
 These are geometry submission counts, not measured GPU frame rates. All three checked views remain below the existing 320,000-triangle / 165-call scenery budgets. The framebuffer budgets and Smooth default remain in place. Distant vehicle batching offsets the cost of the added scenery and people. `check-district-life.mjs` checks all block scenes, clear pedestrian paths, safe curb bays, matching deck/render heights, marina openings, pier driving, floating boats, vegetation clearance and cached frozen pedestrian poses. The depth, frame-budget, handling, actual-model, audio, traffic, world and UI regressions also run. UI checks verify that the first ready scene renders without waiting for a foreground animation frame, and that both pedestrian and traffic clocks pause in overlays.
@@ -142,3 +142,44 @@ to Comet at the user's request. The garage's nine-card layout, textured BMW M3,
 Urus and Skyline, steering pivots, and the BMW distant mesh were inspected.
 Further GPU checks, physical phone input and a sustained 60 FPS driving capture
 are not established by the isolated model viewer or automated tests.
+
+## Axle steering and wheel finish
+
+Normal driving now integrates a rear-axle bicycle model using each model's
+measured wheelbase and axle offsets. The front axle sweeps into a turn while
+the rear axle follows its own tighter arc; there is no independently filtered
+travel heading that can slide the body away from the tire direction. Left and
+right front tires use Ackermann angles with one instantaneous turning centre.
+Keyboard rack response is smoothed, and the actual rack angle is limited by
+speed, road grip and tire upgrades. That same angle drives physics and visible
+steering. Steering airborne tires does not add a ground-contact yaw force.
+This remains a browser kinematic/arcade model, not a complete tire-force or
+suspension simulator. Background: [MathWorks Ackermann and bicycle kinematics](https://www.mathworks.com/help/robotics/ug/mobile-robot-kinematics-equations.html).
+
+Each wheel accumulates its own signed travel from its contact-centre motion.
+Changing the steering angle no longer rescales all previously travelled
+kilometres into a different wheel-spin phase. Rendered spin uses the proper
+wheel radius, wraps only its visible phase, interpolates between physics
+steps, and reverses with the car. Traffic uses its actual route curvature,
+independent inside/outside steering angles and four rolling histories too.
+
+Player wheels retain their authored rim centres/spokes. Fragile source rubber
+and outer fragments are replaced by round, grounded annular rubber shells,
+with subdued tread bump and roughness. A radial rim blend reduces the visible
+spoke strobing at road speed; this is a lightweight visual approximation.
+Traffic gets concentric round tires, rim lips, hubs and model-specific spoke
+counts in its existing one-batch wheel geometry. Preparation JSON describes
+the original baked assets; these wheel changes happen at runtime. Original
+GLB files and creator credits are retained.
+
+`check-axle-steering.mjs` tests all nine cars' rear contact-path alignment,
+front-first displacement, fixed wheelbase, common Ackermann turn centre,
+individual rolling distances, zero spin during stationary steering, high-speed
+grip in both directions, airborne steering and integration step consistency.
+The existing real entrypoint, three-minute traffic, all-six-activity, world,
+collision, audio and source-model regressions also pass. Comet inspection used
+an isolated test scene for stationary steering, a low-speed left turn and a
+160 km/h right turn with actual physics and wheel metrics. Native W acceleration
+followed by physical KeyA and KeyD input produced the correct opposite
+inside/outside rolling histories. It is not a full-map
+FPS benchmark or proof of full simulator fidelity.

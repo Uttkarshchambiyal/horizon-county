@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import {surfaceDepthBias} from './render-quality.js?v=real-fleet-10';
+import {surfaceDepthBias} from './render-quality.js?v=axle-steering-11';
 
 export function buildActivityView(scene,world,reversedDepth=false){
   const group=new THREE.Group();group.name='Active job or checkpoint';scene.add(group);

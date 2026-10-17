@@ -1,8 +1,9 @@
+import {wheelAngles} from './steering.js?v=axle-steering-11';
 import * as THREE from './vendor/three.module.min.js';
-import {fleetModel,fleetProxy,FLEET_TYPES,enableFleetPaint} from './traffic-models.js?v=real-fleet-10';
-import {signalState} from './traffic.js?v=real-fleet-10';
-import {terrainHeight} from './world-data.js?v=real-fleet-10';
-import {enableInstanceFade,distanceFade} from './render-quality.js?v=real-fleet-10';
+import {fleetModel,fleetProxy,FLEET_TYPES,enableFleetPaint} from './traffic-models.js?v=axle-steering-11';
+import {signalState} from './traffic.js?v=axle-steering-11';
+import {terrainHeight} from './world-data.js?v=axle-steering-11';
+import {enableInstanceFade,distanceFade} from './render-quality.js?v=axle-steering-11';
 
 export function buildTrafficView(scene,world,traffic){
   const group=new THREE.Group();group.name='Local animated traffic fleet';scene.add(group);
@@ -39,16 +40,16 @@ export function buildTrafficView(scene,world,traffic){
     const heading=prev.heading+Math.atan2(Math.sin(c.heading-prev.heading),Math.cos(c.heading-prev.heading))*t;
     if(c.pitch===undefined||Math.abs(c.renderS-c.s)>1){
       const f=terrainHeight(c.x-Math.sin(heading)*1.4,c.z-Math.cos(heading)*1.4),b=terrainHeight(c.x+Math.sin(heading)*1.4,c.z+Math.cos(heading)*1.4);c.pitch=Math.atan2(f-b,2.8);c.renderS=c.s;
-      if(!c.parked){const route=traffic.routes[c.route],a=route.frame(c.s-1),b=route.frame(c.s+1);c.renderSteering=Math.atan(model.spec.wheelbase*Math.atan2(Math.sin(b.heading-a.heading),Math.cos(b.heading-a.heading))/2);}
+
     }
     object.rotation.set(c.pitch,heading,0,'YXZ');object.updateMatrix();
   }
   function writeCar(c,index,parts,model,alpha,distance){
-    pose(c,model,alpha);const fade=distanceFade(distance,c.parked?220:420)*(1-THREE.MathUtils.smoothstep(distance,120,160));
+    pose(c,model,alpha);const steer=wheelAngles(THREE.MathUtils.lerp(c.previous?.steerAngle||0,c.steerAngle||0,alpha),model.spec.wheelbase,model.spec.track);const fade=distanceFade(distance,c.parked?220:420)*(1-THREE.MathUtils.smoothstep(distance,120,160));
     for(const part of parts){
       if(!part.wheel){part.fade.array[index]=fade;part.mesh.setMatrixAt(index,object.matrix);}
       else model.wheels.forEach((p,i)=>{
-        part.fade.array[index*4+i]=fade;wheel.position.set(...p);wheel.rotation.set(-(c.parked?0:c.s)/model.spec.radius,i<2?c.renderSteering||0:0,0,'YXZ');wheel.updateMatrix();wheelMatrix.multiplyMatrices(object.matrix,wheel.matrix);part.mesh.setMatrixAt(index*4+i,wheelMatrix);
+        part.fade.array[index*4+i]=fade;wheel.position.set(...p);const travel=c.parked?0:THREE.MathUtils.lerp(c.previous?.wheelDistances?.[i]||0,c.wheelDistances?.[i]||0,alpha);wheel.rotation.set(-(travel/model.spec.radius)%(Math.PI*2),i<2?(i===0?steer.left:steer.right):0,0,'YXZ');wheel.updateMatrix();wheelMatrix.multiplyMatrices(object.matrix,wheel.matrix);part.mesh.setMatrixAt(index*4+i,wheelMatrix);
       });
       if(part.paint)part.mesh.setColorAt(index,color.set(c.paint));
       if(part.tail)part.mesh.setColorAt(index,color.set(c.alertUntil>traffic.time&&Math.floor(traffic.time*6)%2?0xffbe45:!c.parked&&c.braking?0xff4942:night?0xc92420:0x651b1b));

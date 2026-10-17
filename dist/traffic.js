@@ -1,6 +1,7 @@
-import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=real-fleet-10';
-import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=real-fleet-10';
-import {vehicleSpec} from './vehicles.js?v=real-fleet-10';
+import {accumulateWheelTravel} from './steering.js?v=axle-steering-11';
+import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=axle-steering-11';
+import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=axle-steering-11';
+import {vehicleSpec} from './vehicles.js?v=axle-steering-11';
 
 // A small, deterministic fleet follows continuous right-hand lanes. It runs on
 // the same fixed clock as the player, so pausing freezes cars and signals.
@@ -98,11 +99,11 @@ export function stepTraffic(traffic,world,player,dt,pedestrians=[]){
     targets[index]=Math.max(0,target);
   });
   traffic.cars.forEach((car,i)=>{
-    const previous=car.previous||(car.previous={});previous.x=car.x;previous.y=car.y;previous.z=car.z;previous.heading=car.heading;
+    const previous=car.previous||(car.previous={});previous.x=car.x;previous.y=car.y;previous.z=car.z;previous.heading=car.heading;previous.steerAngle=car.steerAngle||0;previous.wheelDistances ||= [0,0,0,0];for(let n=0;n<4;n++)previous.wheelDistances[n]=car.wheelDistances?.[n]||0;
     car.blocked=Math.max(0,car.blocked-dt);car.braking=targets[i]<car.speed-.4;
     car.speed+=clamp(targets[i]-car.speed,-6*dt,2.2*dt);
     car.s=(car.s+car.speed*dt)%traffic.routes[car.route].length;
-    Object.assign(car,traffic.routes[car.route].frame(car.s));car.y=terrainHeight(car.x,car.z)+ROAD_SURFACE+.55;
+    Object.assign(car,traffic.routes[car.route].frame(car.s));const turn=Math.atan2(Math.sin(car.heading-previous.heading),Math.cos(car.heading-previous.heading));car.heading=previous.heading+turn;const spec=vehicleSpec(car.type);car.steerAngle=car.speed>.02?Math.atan(spec.wheelbase*turn/(car.speed*dt)):car.steerAngle||0;accumulateWheelTravel(car,spec,previous.x,previous.z,previous.heading);car.y=terrainHeight(car.x,car.z)+ROAD_SURFACE+.55;
   });
 }
 export function collideTraffic(state,traffic){

@@ -1,8 +1,9 @@
+import {trafficWheelGeometry} from './wheel-finish.js?v=axle-steering-11';
 import * as THREE from './vendor/three.module.min.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
-import {REAL_CAR_MESHES} from './real-car-meshes.js?v=real-fleet-10';
-import {vehicleSpec} from './vehicle-data.js?v=real-fleet-10';
-export {FLEET_TYPES} from './fleet-data.js?v=real-fleet-10';
+import {REAL_CAR_MESHES} from './real-car-meshes.js?v=axle-steering-11';
+import {vehicleSpec} from './vehicle-data.js?v=axle-steering-11';
+export {FLEET_TYPES} from './fleet-data.js?v=axle-steering-11';
 const cache=new Map();
 function bytes(value){return Uint8Array.from(atob(value),c=>c.charCodeAt(0));}
 function geometry(data){
@@ -19,9 +20,15 @@ export function fleetModel(type){
     if(role==='tail'){material.emissive.set(0x3d0808);material.emissiveIntensity=.25;}
     parts.push({geometry:geometry(source[role]),material,paint:role==='paint',tail:role==='tail',role});
   }
-  const model={spec,wheels:spec.wheels,parts,wheelParts:[{geometry:geometry(source.wheel),material:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.65,metalness:.35})}],proxy:source.proxy?geometry(source.proxy):null};cache.set(spec.id,model);return model;
+  const model={spec,wheels:spec.wheels,parts,wheelParts:[{geometry:trafficWheelGeometry(spec),material:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.65,metalness:.35})}],proxy:source.proxy?geometry(source.proxy):null};cache.set(spec.id,model);return model;
 }
-export function fleetProxy(model){if(model.proxy)return model.proxy;const entries=[];for(const part of model.parts){const g=part.geometry.toNonIndexed();g.setAttribute('paintMask',new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count).fill(part.paint?1:0),1));entries.push(g);}for(const center of model.wheels){const g=model.wheelParts[0].geometry.toNonIndexed().translate(...center);g.setAttribute('paintMask',new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count),1));entries.push(g);}model.proxy=mergeGeometries(entries);entries.forEach(g=>g.dispose());return model.proxy;}
+export function fleetProxy(model){
+  if(model.proxy)return model.proxy;const entries=[];
+  function add(source,paint,center){const g=source.index?source.toNonIndexed():source.clone();if(center)g.translate(...center);
+    for(const name of ['normal','color']){const a=g.attributes[name],values=new Float32Array(a.count*3);for(let i=0;i<a.count;i++)values.set([a.getX(i),a.getY(i),a.getZ(i)],i*3);g.setAttribute(name,new THREE.BufferAttribute(values,3));}
+    g.setAttribute('paintMask',new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count).fill(paint?1:0),1));entries.push(g);}
+  for(const part of model.parts)add(part.geometry,part.paint);for(const center of model.wheels)add(model.wheelParts[0].geometry,false,center);model.proxy=mergeGeometries(entries);entries.forEach(g=>g.dispose());return model.proxy;
+}
 // Instance paint must affect painted panels only, keeping glass, trim and
 // rubber their source colours even in a one-draw distant silhouette.
 export function enableFleetPaint(material){

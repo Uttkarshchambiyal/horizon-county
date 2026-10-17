@@ -1,16 +1,17 @@
 // All wheel animation follows travelled distance and the physics steering angle.
-export function wheelAngles(steerAngle,wheelbase,track){
-  if(Math.abs(steerAngle)<.00001)return {left:0,right:0};
-  const radius=wheelbase/Math.tan(Math.abs(steerAngle)),sign=Math.sign(steerAngle),inner=Math.atan(wheelbase/Math.max(.5,radius-track/2)),outer=Math.atan(wheelbase/(radius+track/2));
-  return steerAngle>0?{left:sign*inner,right:sign*outer}:{left:sign*outer,right:sign*inner};
-}
-export function animateVehicle(vehicle,state){
+import {wheelAngles} from './steering.js?v=axle-steering-11';
+export {wheelAngles};
+export function animateVehicle(vehicle,state,previous,alpha=1){
   const {spec}=vehicle,angles=wheelAngles(state.steerAngle||0,spec.wheelbase,spec.track||spec.width*.84);
   for(const pivot of vehicle.steerWheels)pivot.rotation.y=pivot.position.x<0?angles.left:angles.right;
   for(let i=0;i<vehicle.wheels.length;i++){
     const wheel=vehicle.wheels[i];if(wheel.userData.restRoll===undefined)wheel.userData.restRoll=wheel.rotation.x;
-    const side=Math.sign(vehicle.wheelCenters[i]?.position.x||0),factor=1+side*Math.tan(state.steerAngle||0)*(spec.track||spec.width*.84)/2/spec.wheelbase;
-    wheel.rotation.x=wheel.userData.restRoll-(state.wheelTravel||0)/spec.radius*factor;
+    const distance=state.wheelDistances?.[i]??state.wheelTravel??0,old=previous?.wheelDistances?.[i]??distance,travel=old+(distance-old)*alpha;
+    const radius=vehicle.wheelRadii?.[i]||spec.radius;
+    // Wrap only the displayed phase; cumulative physical travel stays continuous.
+    wheel.rotation.x=wheel.userData.restRoll-((travel/radius)%(Math.PI*2));
+    const blur=vehicle.wheelBlur?.[i];if(blur){blur.visible=Math.abs(state.speed||0)>9;blur.material.opacity=Math.min(.86,Math.max(0,(Math.abs(state.speed||0)/radius-25)/95));}
+
   }
   return angles;
 }

@@ -1,4 +1,4 @@
-import {VEHICLES} from './vehicle-data.js?v=real-fleet-10';
+import {VEHICLES} from './vehicle-data.js?v=axle-steering-11';
 const SAVE_KEY='horizon-career-v1';
 const VEHICLE_IDS=VEHICLES.map(v=>v.id);
 export const UPGRADES=[

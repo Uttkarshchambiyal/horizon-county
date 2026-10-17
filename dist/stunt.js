@@ -1,8 +1,8 @@
 import * as THREE from './vendor/three.module.min.js';
-import { TRACKS, makeCourse } from './tracks.js?v=real-fleet-10';
-import { createCar, addReflections } from './car.js?v=real-fleet-10';
-import { createDrivingControls } from './controls.js?v=real-fleet-10';
-import { newCarState, stepCar, resetAtCheckpoint, clamp, angleDelta } from './physics.js?v=real-fleet-10';
+import { TRACKS, makeCourse } from './tracks.js?v=axle-steering-11';
+import { createCar, addReflections } from './car.js?v=axle-steering-11';
+import { createDrivingControls } from './controls.js?v=axle-steering-11';
+import { newCarState, stepCar, resetAtCheckpoint, clamp, angleDelta } from './physics.js?v=axle-steering-11';
 
 const $=id=>document.getElementById(id);
 const canvas=$('world');

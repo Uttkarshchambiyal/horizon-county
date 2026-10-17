@@ -21,7 +21,7 @@ const car=createVehicle(new THREE.Group(),'clubsport');mountSportsCar(car,gltf);
   assert.ok(car.wheelCenters.slice(2).every(p=>p.rotation.y===0),'Rear wheels must stay aligned');
   const before=car.wheels.map(w=>w.rotation.x);animateVehicle(car,s);assert.deepEqual(car.wheels.map(w=>w.rotation.x),before,'No tire roll at rest');
   for(let i=0;i<240;i++)stepDrive(s,flat,{throttle:true,steer:-1},dt);
-  assert.ok(s.x<-2&&s.heading>0,'Car must follow its steered front wheels');animateVehicle(car,s);assert.ok(car.wheels.every((w,i)=>Math.abs(w.rotation.x-before[i])>1));
+  assert.ok(s.x<-2&&s.heading>0,'Car must follow its steered front wheels');animateVehicle(car,s);assert.ok(s.wheelDistances.every(d=>Math.abs(d)>1));assert.ok(car.wheels.every((w,i)=>Math.abs(w.rotation.x-w.userData.restRoll+s.wheelDistances[i]/car.wheelRadii[i]%(Math.PI*2))<1e-6),'Every wheel must render its own rolling distance');
   const front=car.steerWheels[0],brake=front.children.find(c=>c.name.startsWith('brake')),q=brake.quaternion.clone();
   s.wheelTravel+=10;animateVehicle(car,s);assert.ok(brake.quaternion.equals(q),'Brake assembly must not spin with rims');
   assert.ok(car.bodyMat.metalness<.4);assert.ok(gltf.scene.getObjectByName('glass').material.opacity>.7);

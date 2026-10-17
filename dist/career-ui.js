@@ -1,4 +1,4 @@
-import {UPGRADES} from './career.js?v=real-fleet-10';
+import {UPGRADES} from './career.js?v=axle-steering-11';
 const $=id=>document.getElementById(id);
 export const money=value=>'$'+Math.floor(value).toLocaleString('en-US');
 export const clock=value=>{const n=Math.max(0,value);return Math.floor(n/60)+':'+String(Math.floor(n%60)).padStart(2,'0')+'.'+Math.floor(n%1*10);};

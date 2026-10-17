@@ -120,3 +120,14 @@ arcade game tuning, not manufacturer specifications.
 Offline optimization uses meshoptimizer v1.0 by Arseny Kapoulkine (MIT):
 https://github.com/zeux/meshoptimizer/tree/v1.0
 No meshopt decoder, model marketplace, or external service is used at runtime.
+
+## Runtime wheel finish and steering adaptation
+
+The current game also replaces fragile outer rubber fragments with generated
+round tire shells and a tread bump, retaining authored rim centres and spokes.
+Player rim surfaces blend with a generated radial surface at speed to reduce
+strobing. Close traffic wheel LODs are replaced by game-generated concentric
+tires, rim lips, hubs and model-specific spoke patterns; body LODs still use the
+credited source meshes. Wheel travel, individual steering angles and vehicle
+paths follow an axle-based kinematic driving model. These adaptations are not
+manufacturer-certified vehicle behaviour or an endorsement by any creator.

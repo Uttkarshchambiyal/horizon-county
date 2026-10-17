@@ -1,10 +1,10 @@
-import {clamp} from './world-data.js?v=real-fleet-10';
-import {vehicleSpec} from './vehicle-data.js?v=real-fleet-10';
-const angle=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+import {advanceAxles,steeringLimit,accumulateWheelTravel} from './steering.js?v=axle-steering-11';
+import {clamp} from './world-data.js?v=axle-steering-11';
+import {vehicleSpec} from './vehicle-data.js?v=axle-steering-11';
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function newDriveState(world,spawn=world.spawns[0],vehicleId='clubsport'){
   return {x:spawn.x,z:spawn.z,y:world.surface(spawn.x,spawn.z).height+.55,heading:spawn.heading||0,motionHeading:spawn.heading||0,
-    vehicleId,speed:0,steering:0,steerAngle:0,yawRate:0,lateralAcceleration:0,longitudinalAcceleration:0,verticalSpeed:0,reverseHold:0,wheelTravel:0,boost:100,elapsed:0,distance:0,maxSpeed:0,grounded:true,waterTime:0,hitCooldown:0,
+    vehicleId,speed:0,steering:0,steerAngle:0,yawRate:0,lateralAcceleration:0,longitudinalAcceleration:0,verticalSpeed:0,reverseHold:0,wheelTravel:0,wheelDistances:[0,0,0,0],boost:100,elapsed:0,distance:0,maxSpeed:0,grounded:true,waterTime:0,hitCooldown:0,
     lastSafe:{x:spawn.x,z:spawn.z,heading:spawn.heading||0}};
 }
 export function recoverCar(state,world,spawn){
@@ -28,24 +28,32 @@ export function stepDrive(state,world,input,dt){
   }else {state.reverseHold=0;state.speed=approach(state.speed,0,rolling*dt);}
   if(input.drift)state.speed=approach(state.speed,0,7.5*dt);
   if(state.grounded&&(gas&&!brake||Math.abs(state.speed)>.15||brake&&state.reverseHold>.28)){
-    const hx=-Math.sin(state.heading),hz=-Math.cos(state.heading),front=world.surface(state.x+hx*1.4,state.z+hz*1.4).height,back=world.surface(state.x-hx*1.4,state.z-hz*1.4).height;
-    supportGrade=clamp((front-back)/2.8,-.6,.6);state.speed-=9.81*supportGrade*dt;
+    const hx=-Math.sin(state.heading),hz=-Math.cos(state.heading),fz=-(spec.wheels[0][2]+spec.wheels[1][2])/2,rz=(spec.wheels[2][2]+spec.wheels[3][2])/2,front=world.surface(state.x+hx*fz,state.z+hz*fz).height,back=world.surface(state.x-hx*rz,state.z-hz*rz).height;
+    supportGrade=clamp((front-back)/spec.wheelbase,-.6,.6);state.speed-=9.81*supportGrade*dt;
   }
   if(state.speed>top)state.speed=approach(state.speed,top,18*dt);
   state.speed=clamp(state.speed,-9,boostTop);if(!gas&&!brake&&Math.abs(state.speed)<.08)state.speed=0;
   state.maxSpeed=Math.max(state.maxSpeed,Math.abs(state.speed));
-  // Predictable keyboard response, with visible steering kept separate from tire grip.
+  // The rack angle drives the rear-axle path. There is no separate heading
+  // filter that can make the body slide away from its visible wheel direction.
   const steer=clamp(input.steer||0,-1,1),steeringRate=steer===0?5.5:steer*state.steering<0?5:3.8;
   state.steering=approach(state.steering,steer,steeringRate*dt);
-  const maxAngle=.56/(1+Math.abs(state.speed)/24);state.steerAngle=-state.steering*maxAngle;
-  const grip=(start.onRoad?spec.grip:spec.suv?9:7)*(tune.grip??1);
-  const targetYaw=clamp(state.speed/spec.wheelbase*Math.tan(state.steerAngle)*(input.drift?1.1:1),-grip/Math.max(2,Math.abs(state.speed)),grip/Math.max(2,Math.abs(state.speed)));
-  state.yawRate+=(targetYaw-state.yawRate)*(1-Math.exp(-(state.grounded?10:1.5)*dt));state.yawRate=clamp(state.yawRate,-grip/Math.max(2,Math.abs(state.speed)),grip/Math.max(2,Math.abs(state.speed)));
-  if(Math.abs(state.speed)<.04)state.yawRate=0;
-  const oldHeading=state.heading;state.heading+=state.yawRate*dt;state.lateralAcceleration=state.speed*state.yawRate;
-  const slip=Math.atan(.5*Math.tan(state.steerAngle))*(input.drift?1.7:1),desiredMotion=(oldHeading+state.heading)/2+slip;
-  state.motionHeading+=angle(desiredMotion,state.motionHeading)*(1-Math.exp(-(input.drift?3:start.onRoad?20:9)*dt));
-  const oldX=state.x,oldZ=state.z,vx=-Math.sin(state.motionHeading)*state.speed,vz=-Math.cos(state.motionHeading)*state.speed,proposedX=state.x+vx*dt,proposedZ=state.z+vz*dt;
+  const grip=(start.onRoad?spec.grip:spec.suv?9:7)*(tune.grip??1)*(input.drift?.72:1);
+  const limit=steeringLimit(Math.max(Math.abs(oldSpeed),Math.abs(state.speed)),spec.wheelbase,grip);
+  state.steerAngle=clamp(approach(state.steerAngle,-state.steering*limit,(2.9/(1+Math.abs(state.speed)/30))*dt),-limit,limit);
+  const oldX=state.x,oldZ=state.z,oldHeading=state.heading,distance=(oldSpeed+state.speed)*.5*dt;
+  let proposedX,proposedZ;
+  if(state.grounded){
+    const next=advanceAxles(state.x,state.z,state.heading,spec,distance,state.steerAngle);
+    proposedX=next.x;proposedZ=next.z;state.heading=next.heading;state.yawRate=(state.heading-oldHeading)/dt;
+  }else{
+    // Steering airborne tires cannot create a new ground-contact turning force.
+    state.yawRate*=Math.exp(-.6*dt);state.heading+=state.yawRate*dt;
+    proposedX=state.x-Math.sin(state.motionHeading)*distance;proposedZ=state.z-Math.cos(state.motionHeading)*distance;
+  }
+  state.lateralAcceleration=state.grounded?state.speed*state.yawRate:0;
+  const vx=(proposedX-oldX)/dt,vz=(proposedZ-oldZ)/dt;
+  if(Math.hypot(vx,vz)>.001)state.motionHeading=Math.atan2(-vx*Math.sign(state.speed||oldSpeed||1),-vz*Math.sign(state.speed||oldSpeed||1));
   const movement=world.resolve(proposedX,proposedZ,state.heading);state.x=movement.x;state.z=movement.z;
   if(movement.hit){
     const dx=movement.x-proposedX,dz=movement.z-proposedZ,length=Math.hypot(dx,dz),nx=length?dx/length:0,nz=length?dz/length:0,inward=vx*nx+vz*nz;
@@ -55,6 +63,8 @@ export function stepDrive(state,world,input,dt){
     if(length<.000001)state.speed=0;
   }
   const travelled=Math.hypot(state.x-oldX,state.z-oldZ);state.distance+=travelled;state.wheelTravel+=travelled*Math.sign(oldSpeed||state.speed);
+  if(state.grounded)accumulateWheelTravel(state,spec,oldX,oldZ,oldHeading);
+  else for(let i=0;i<4;i++)state.wheelDistances[i]+=distance;
   const surface=world.surface(state.x,state.z),ground=surface.height+.55,previousGround=start.height+.55,supportVelocity=Math.abs(state.speed*supportGrade)+.1,groundVelocity=clamp((ground-previousGround)/dt,-supportVelocity,supportVelocity);
   if(state.grounded){
     if(Math.abs(state.speed)>12&&state.verticalSpeed-groundVelocity>1.5&&ground<state.y+state.verticalSpeed*dt-9.81*dt*dt){state.grounded=false;state.verticalSpeed-=9.81*dt;state.y+=state.verticalSpeed*dt;}
