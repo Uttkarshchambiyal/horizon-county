@@ -1,8 +1,8 @@
 import * as THREE from './vendor/three.module.min.js';
-import { TRACKS, makeCourse } from './tracks.js';
-import { createCar, addReflections } from './car.js';
-import { createDrivingControls } from './controls.js';
-import { newCarState, stepCar, resetAtCheckpoint, clamp, angleDelta } from './physics.js';
+import { TRACKS, makeCourse } from './tracks.js?v=real-fleet-10';
+import { createCar, addReflections } from './car.js?v=real-fleet-10';
+import { createDrivingControls } from './controls.js?v=real-fleet-10';
+import { newCarState, stepCar, resetAtCheckpoint, clamp, angleDelta } from './physics.js?v=real-fleet-10';
 
 const $=id=>document.getElementById(id);
 const canvas=$('world');
@@ -300,7 +300,7 @@ function positionCar(dt){
   steerVisual=THREE.MathUtils.damp(steerVisual,state.steering,14,dt||.016);
   car.rotation.z=THREE.MathUtils.damp(car.rotation.z,-steerVisual*Math.min(Math.abs(state.speed)/60,1)*.055,8,dt||.016);
   for(const pivot of steerWheels)pivot.rotation.y=-steerVisual*.5/(1+Math.abs(state.speed)*.035);
-  for(const wheel of wheels)wheel.rotation.x-=state.speed*(dt||0)/.449;
+  for(const wheel of wheels)wheel.rotation.x-=state.speed*(dt||0)/.3579;
   const input=getInput();
   for(const flame of flames){flame.visible=mode==='playing'&&input.boost&&input.throttle&&!input.brake&&state.boost>1&&state.speed>8&&state.grounded;flame.scale.y=.85+Math.sin(clockTime*43)*.15;}
   tailMat.emissiveIntensity=input.brake?5:1.5;

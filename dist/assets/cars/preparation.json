@@ -1,0 +1,327 @@
+[
+  {
+    "id": "touring",
+    "source": "bmw-e36-m3",
+    "sourceTriangles": 38913,
+    "playerTriangles": 36153,
+    "trafficTriangles": 3362,
+    "proxyTriangles": 3362,
+    "bytes": 3623040,
+    "length": 4.44,
+    "width": 1.812,
+    "height": 1.303,
+    "radius": 0.3218,
+    "wheelbase": 2.6878,
+    "wheels": [
+      [
+        -0.70705,
+        -0.22741,
+        -1.43984
+      ],
+      [
+        0.70686,
+        -0.22741,
+        -1.43984
+      ],
+      [
+        -0.72338,
+        -0.22792,
+        1.24796
+      ],
+      [
+        0.72299,
+        -0.22792,
+        1.24796
+      ]
+    ]
+  },
+  {
+    "id": "trail",
+    "source": "bmw-x6",
+    "sourceTriangles": 6688,
+    "playerTriangles": 6688,
+    "trafficTriangles": 2484,
+    "proxyTriangles": 599,
+    "bytes": 365688,
+    "length": 4.948,
+    "width": 2.248,
+    "height": 1.753,
+    "radius": 0.4135,
+    "wheelbase": 2.989,
+    "wheels": [
+      [
+        -0.79636,
+        -0.1365,
+        -1.57422
+      ],
+      [
+        0.79636,
+        -0.1365,
+        -1.57422
+      ],
+      [
+        -0.82162,
+        -0.1365,
+        1.41482
+      ],
+      [
+        0.82162,
+        -0.1365,
+        1.41482
+      ]
+    ]
+  },
+  {
+    "id": "porsche",
+    "source": "porsche-911",
+    "sourceTriangles": 24749,
+    "playerTriangles": 24749,
+    "trafficTriangles": 2443,
+    "proxyTriangles": 650,
+    "bytes": 3090524,
+    "length": 4.29,
+    "width": 1.765,
+    "height": 1.281,
+    "radius": 0.3176,
+    "wheelbase": 2.2776,
+    "wheels": [
+      [
+        -0.71525,
+        -0.23235,
+        -1.22592
+      ],
+      [
+        0.71341,
+        -0.23235,
+        -1.22464
+      ],
+      [
+        -0.73093,
+        -0.23235,
+        1.05167
+      ],
+      [
+        0.72566,
+        -0.23235,
+        1.05295
+      ]
+    ]
+  },
+  {
+    "id": "skyline",
+    "source": "nissan-gt-r",
+    "sourceTriangles": 25094,
+    "playerTriangles": 25094,
+    "trafficTriangles": 2425,
+    "proxyTriangles": 719,
+    "bytes": 3642964,
+    "length": 4.6,
+    "width": 1.883,
+    "height": 1.34,
+    "radius": 0.3232,
+    "wheelbase": 2.6598,
+    "wheels": [
+      [
+        -0.70235,
+        -0.22684,
+        -1.3761
+      ],
+      [
+        0.71622,
+        -0.22684,
+        -1.3761
+      ],
+      [
+        -0.70235,
+        -0.22664,
+        1.28375
+      ],
+      [
+        0.71622,
+        -0.22684,
+        1.28375
+      ]
+    ]
+  },
+  {
+    "id": "ae86",
+    "source": "toyota-ae86",
+    "sourceTriangles": 25984,
+    "playerTriangles": 25984,
+    "trafficTriangles": 2444,
+    "proxyTriangles": 645,
+    "bytes": 1513940,
+    "length": 4.215,
+    "width": 1.85,
+    "height": 1.262,
+    "radius": 0.2953,
+    "wheelbase": 2.4068,
+    "wheels": [
+      [
+        -0.70221,
+        -0.25466,
+        -1.26034
+      ],
+      [
+        0.70474,
+        -0.25466,
+        -1.26034
+      ],
+      [
+        -0.70221,
+        -0.24764,
+        1.14647
+      ],
+      [
+        0.70474,
+        -0.24764,
+        1.14647
+      ]
+    ]
+  },
+  {
+    "id": "aventador",
+    "source": "lamborghini-aventador-lp700-4",
+    "sourceTriangles": 4700,
+    "playerTriangles": 4700,
+    "trafficTriangles": 2286,
+    "proxyTriangles": 650,
+    "bytes": 1823080,
+    "length": 4.78,
+    "width": 2.312,
+    "height": 1.099,
+    "radius": 0.3338,
+    "wheelbase": 2.7076,
+    "wheels": [
+      [
+        -0.83316,
+        -0.22398,
+        -1.27229
+      ],
+      [
+        0.83316,
+        -0.22398,
+        -1.27229
+      ],
+      [
+        -0.86039,
+        -0.20645,
+        1.43526
+      ],
+      [
+        0.86039,
+        -0.20645,
+        1.43526
+      ]
+    ]
+  },
+  {
+    "id": "corolla",
+    "source": "toyota-corolla",
+    "sourceTriangles": 55564,
+    "playerTriangles": 32964,
+    "trafficTriangles": 2443,
+    "proxyTriangles": 649,
+    "bytes": 1027096,
+    "length": 4.16,
+    "width": 1.784,
+    "height": 1.262,
+    "radius": 0.2916,
+    "wheelbase": 2.4168,
+    "wheels": [
+      [
+        -0.69075,
+        -0.25839,
+        -1.26658
+      ],
+      [
+        0.69075,
+        -0.25839,
+        -1.26658
+      ],
+      [
+        -0.69075,
+        -0.25839,
+        1.1502
+      ],
+      [
+        0.69075,
+        -0.25839,
+        1.1502
+      ]
+    ]
+  },
+  {
+    "id": "urus",
+    "source": "lamborghini-urus",
+    "sourceTriangles": 76477,
+    "playerTriangles": 37764,
+    "trafficTriangles": 2064,
+    "proxyTriangles": 684,
+    "bytes": 2362504,
+    "length": 5.112,
+    "width": 2.259,
+    "height": 1.651,
+    "radius": 0.4024,
+    "wheelbase": 3.0179,
+    "wheels": [
+      [
+        -0.86433,
+        -0.14757,
+        -1.4888
+      ],
+      [
+        0.86419,
+        -0.14757,
+        -1.4888
+      ],
+      [
+        -0.86433,
+        -0.14757,
+        1.52906
+      ],
+      [
+        0.86419,
+        -0.14757,
+        1.52906
+      ]
+    ]
+  },
+  {
+    "id": "clubsport",
+    "usage": "player-fallback",
+    "source": "ferrari-458",
+    "sourceTriangles": 100199,
+    "playerTriangles": 100441,
+    "trafficTriangles": 42822,
+    "proxyTriangles": 42822,
+    "bytes": 0,
+    "length": 4.53,
+    "width": 2.253,
+    "height": 1.235,
+    "radius": 0.3579,
+    "wheelbase": 2.6496,
+    "wheels": [
+      [
+        -0.84144,
+        -0.19211,
+        -1.15587
+      ],
+      [
+        0.8292,
+        -0.18948,
+        -1.15501
+      ],
+      [
+        -0.82024,
+        -0.19211,
+        1.49347
+      ],
+      [
+        0.82491,
+        -0.19211,
+        1.4948
+      ]
+    ]
+  }
+]

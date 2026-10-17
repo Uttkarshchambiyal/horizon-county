@@ -1,5 +1,5 @@
-import {clamp} from './world-data.js?v=career-9';
-import {vehicleSpec} from './vehicles.js?v=career-9';
+import {clamp} from './world-data.js?v=real-fleet-10';
+import {vehicleSpec} from './vehicle-data.js?v=real-fleet-10';
 const angle=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function newDriveState(world,spawn=world.spawns[0],vehicleId='clubsport'){
@@ -38,7 +38,7 @@ export function stepDrive(state,world,input,dt){
   const steer=clamp(input.steer||0,-1,1),steeringRate=steer===0?5.5:steer*state.steering<0?5:3.8;
   state.steering=approach(state.steering,steer,steeringRate*dt);
   const maxAngle=.56/(1+Math.abs(state.speed)/24);state.steerAngle=-state.steering*maxAngle;
-  const grip=(start.onRoad?(state.vehicleId==='trail'?10.5:state.vehicleId==='touring'?13:15):state.vehicleId==='trail'?9:7)*(tune.grip??1);
+  const grip=(start.onRoad?spec.grip:spec.suv?9:7)*(tune.grip??1);
   const targetYaw=clamp(state.speed/spec.wheelbase*Math.tan(state.steerAngle)*(input.drift?1.1:1),-grip/Math.max(2,Math.abs(state.speed)),grip/Math.max(2,Math.abs(state.speed)));
   state.yawRate+=(targetYaw-state.yawRate)*(1-Math.exp(-(state.grounded?10:1.5)*dt));state.yawRate=clamp(state.yawRate,-grip/Math.max(2,Math.abs(state.speed)),grip/Math.max(2,Math.abs(state.speed)));
   if(Math.abs(state.speed)<.04)state.yawRate=0;

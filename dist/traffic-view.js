@@ -1,8 +1,8 @@
 import * as THREE from './vendor/three.module.min.js';
-import {fleetModel,fleetProxy,FLEET_TYPES} from './traffic-models.js?v=career-9';
-import {signalState} from './traffic.js?v=career-9';
-import {terrainHeight} from './world-data.js?v=career-9';
-import {enableInstanceFade,distanceFade} from './render-quality.js?v=career-9';
+import {fleetModel,fleetProxy,FLEET_TYPES,enableFleetPaint} from './traffic-models.js?v=real-fleet-10';
+import {signalState} from './traffic.js?v=real-fleet-10';
+import {terrainHeight} from './world-data.js?v=real-fleet-10';
+import {enableInstanceFade,distanceFade} from './render-quality.js?v=real-fleet-10';
 
 export function buildTrafficView(scene,world,traffic){
   const group=new THREE.Group();group.name='Local animated traffic fleet';scene.add(group);
@@ -14,7 +14,7 @@ export function buildTrafficView(scene,world,traffic){
     const model=fleetModel(type),cars=[...parked.filter(c=>c.type===type),...traffic.cars.filter(c=>c.type===type)];
     const parts=[...model.parts,...model.wheelParts.map(p=>({...p,wheel:true}))].map(part=>{
       const mesh=new THREE.InstancedMesh(part.geometry,part.material,cars.length*(part.wheel?4:1));mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);if(part.paint||part.tail){mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(mesh.instanceMatrix.count*3).fill(1),3);mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);}mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;const fade=enableInstanceFade(mesh);group.add(mesh);return {...part,mesh,fade};
-    });const proxyMesh=new THREE.InstancedMesh(fleetProxy(model),new THREE.MeshStandardMaterial({vertexColors:true,roughness:.6,metalness:.2}),cars.length);proxyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);proxyMesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(cars.length*3).fill(1),3);proxyMesh.frustumCulled=false;const proxy={mesh:proxyMesh,fade:enableInstanceFade(proxyMesh)};group.add(proxyMesh);pools.push({cars,parts,model,proxy,parkedCount:0,parkedProxyCount:0});
+    });const proxyMesh=new THREE.InstancedMesh(fleetProxy(model),enableFleetPaint(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.6,metalness:.2})),cars.length);proxyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);proxyMesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(cars.length*3).fill(1),3);proxyMesh.frustumCulled=false;const proxy={mesh:proxyMesh,fade:enableInstanceFade(proxyMesh)};group.add(proxyMesh);pools.push({cars,parts,model,proxy,parkedCount:0,parkedProxyCount:0});
   }
   const signals=[],posts=[],heads=[];
   for(const x of world.xs)for(const z of world.zs)for(const axis of['ns','ew'])for(const side of[-1,1]){

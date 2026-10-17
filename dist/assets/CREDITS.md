@@ -13,8 +13,10 @@ under CC0: https://polyhaven.com/license
 Files were downloaded from the official dl.polyhaven.org asset service. The
 environment is prefiltered at runtime for car paint, glass and metal reflections.
 
-The world layout and T-04 Meridian and R-09 Summit models are
-original code-generated designs. The interface car silhouettes are illustrations.
+The world layout is original. All car models and previews have creator and
+license attribution in `cars/ATTRIBUTION.md` and `/credits.html`.
+The nine-car garage uses the Ferrari 458 plus eight additional CC BY 4.0 real-car
+models. The added eight models also replace all moving and parked generic cars.
 
 The Ferrari 458 Italia by vicent091036 is CC BY 4.0; see cars/ATTRIBUTION.md.
 

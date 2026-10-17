@@ -1,9 +1,10 @@
-import {clamp} from './world-data.js?v=career-9';
+import {vehicleSpec} from './vehicle-data.js?v=real-fleet-10';
+import {clamp} from './world-data.js?v=real-fleet-10';
 
 export function engineTelemetry(state,input={}){
   const speed=Math.abs(state.speed),gear=state.speed<-.1?-1:speed<.2?0:Math.min(6,1+[15,26,37,49,61].filter(v=>speed>v).length);
   const ratios=[3.1,2.18,1.63,1.28,1.03,.84],ratio=ratios[Math.max(0,gear-1)]||3.1;
-  const radius=state.vehicleId==='trail'?.51:state.vehicleId==='touring'?.46:.36;
+  const radius=vehicleSpec(state.vehicleId).radius;
   const wheelRpm=speed/radius*60/(Math.PI*2),load=input.throttle&&!input.brake?1:.12;
   const rpm=clamp(900+wheelRpm*ratio*3.7+(input.throttle?1050:0)+(input.boost?350:0),850,8600);
   return {gear,rpm,load};
@@ -57,7 +58,7 @@ export function createEngineAudio(){
     if(audio.active&&input.boost&&input.throttle&&!lastBoost&&state.speed>6&&state.boost>1)audio.effect('boost');lastBoost=!!input.boost;
     if(audio.active&&lastThrottle&&!input.throttle&&telemetry.rpm>3800)audio.effect('overrun');lastThrottle=!!input.throttle;
     if(telemetry.gear>0&&lastGear>0&&telemetry.gear!==lastGear){shiftUntil=t+.13;audio.effect('shift');}lastGear=telemetry.gear;
-    const shifting=t<shiftUntil,targetRpm=telemetry.rpm*(shifting?.79:1),voice=state.vehicleId==='trail'?.73:state.vehicleId==='touring'?.84:1,pitch=clamp(targetRpm/2300*voice,.48,3.1);
+    const shifting=t<shiftUntil,targetRpm=telemetry.rpm*(shifting?.79:1),voice=vehicleSpec(state.vehicleId).voice,pitch=clamp(targetRpm/2300*voice,.48,3.1);
     audio.master.gain.setTargetAtTime(active&&!muted?.24:0,t,.04);
     if(sample)sample.playbackRate.setTargetAtTime(pitch,t,.085);
     if(sub){sub.frequency.setTargetAtTime(targetRpm/60*2,t,.07);subGain.gain.setTargetAtTime(.035+telemetry.load*.04,t,.07);}

@@ -29,7 +29,7 @@ for(let time=0;time<320;time+=.25)assert.ok(!(signalState(time,'ns')==='green'&&
 }
 {
   const traffic=makeTraffic(world),player=newDriveState(world),start={x:player.x,z:player.z};let closest=Infinity;
-  assert.equal(traffic.cars.length,18);assert.equal(new Set(traffic.cars.map(c=>c.type)).size,6);
+  assert.equal(traffic.cars.length,18);assert.equal(new Set(traffic.cars.map(c=>c.type)).size,8);
   // Three full signal cycles and many turns, sampled at simulation resolution.
   for(let tick=0;tick<60*180;tick++){
     stepTraffic(traffic,world,player,dt);stepDrive(player,world,{},dt);collideTraffic(player,traffic);
@@ -44,11 +44,11 @@ const ctx=new Proxy({},{get:()=>()=>{}});globalThis.document={createElement:()=>
 {
   const specs=[];
   for(const v of VEHICLES){
-    const model=createVehicle(new THREE.Group(),v.id),bounds=new THREE.Box3().setFromObject(model.car),size=bounds.getSize(new THREE.Vector3());assert.equal(model.wheels.length,4);assert.equal(model.steerWheels.length,2);assert.ok(size.x>2&&size.z>4);specs.push(size.y);
+    const model=createVehicle(new THREE.Group(),v.id),bounds=new THREE.Box3().setFromObject(model.car),size=bounds.getSize(new THREE.Vector3());assert.equal(model.wheels.length,4);assert.equal(model.steerWheels.length,2);assert.ok(size.x>1.7&&size.z>4);specs.push(size.y);
     const state=newDriveState(world,world.spawns[0],v.id);for(let i=0;i<60;i++)stepDrive(state,world,{throttle:true,steer:-1},dt);assert.ok(state.x<world.spawns[0].x-.5&&state.heading>.25,'Each car must turn left');recoverCar(state,world);assert.equal(state.vehicleId,v.id);assert.equal(state.speed,0);
   }
   assert.ok(specs[2]>specs[0]+.4,'SUV must have a distinct raised silhouette');
   const scene=new THREE.Scene(),traffic=makeTraffic(world),view=buildTrafficView(scene,world,traffic);view.update(.5);view.setNight(true);assert.ok(view.stats.drawCalls<=50,'Fleet should batch repeated models');
   for(const name of ['asphalt_02_diff_1k.jpg','asphalt_02_nor_gl_1k.jpg','asphalt_02_rough_1k.jpg','brown_mud_leaves_01_diff_1k.jpg','brown_mud_leaves_01_nor_gl_1k.jpg','kloppenheim_06_puresky_1k.hdr'])assert.ok(fs.statSync(new URL('../dist/assets/'+name,import.meta.url)).size>10000);
-  console.log('PASS Three player models and handling specs; six distinct traffic models, recovery preserves car, fleet instancing ('+view.stats.drawCalls+' material batches), local PBR/HDR assets');
+  console.log('PASS Nine real-car player models and handling specs; eight real-car traffic models, recovery preserves car, fleet instancing ('+view.stats.drawCalls+' material batches), local PBR/HDR assets');
 }

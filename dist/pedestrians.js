@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
-import {enableInstanceFade,distanceFade} from './render-quality.js?v=career-9';
-import {createPedestrianMotion} from './pedestrian-motion.js?v=career-9';
+import {enableInstanceFade,distanceFade} from './render-quality.js?v=real-fleet-10';
+import {createPedestrianMotion} from './pedestrian-motion.js?v=real-fleet-10';
 
 export function buildPedestrians(parent,world,shadowMap){
   const group=new THREE.Group();group.name='Sidewalk and boardwalk life';parent.add(group);

@@ -1,11 +1,11 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=career-9';
-import {buildCity} from './city-view.js?v=career-9';
-import {buildRegions} from './region-view.js?v=career-9';
-import {streamStaticWorld} from './world-streaming.js?v=career-9';
-import {surfaceDepthBias} from './render-quality.js?v=career-9';
-import {buildPedestrians} from './pedestrians.js?v=career-9';
-import {addGroundContact} from './lighting.js?v=career-9';
+import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=real-fleet-10';
+import {buildCity} from './city-view.js?v=real-fleet-10';
+import {buildRegions} from './region-view.js?v=real-fleet-10';
+import {streamStaticWorld} from './world-streaming.js?v=real-fleet-10';
+import {surfaceDepthBias} from './render-quality.js?v=real-fleet-10';
+import {buildPedestrians} from './pedestrians.js?v=real-fleet-10';
+import {addGroundContact} from './lighting.js?v=real-fleet-10';
 
 export function buildOpenWorld(scene,world,{reversedDepth=false}={}){
   const group=new THREE.Group();scene.add(group);

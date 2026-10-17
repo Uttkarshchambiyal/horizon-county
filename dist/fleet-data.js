@@ -1,3 +1,4 @@
-export const FLEET_TYPES=['hatchback','sedan','suv','coupe','pickup','van'];
-
-export const FLEET_FOOTPRINTS={hatchback:[3.85,1.75],sedan:[4.75,1.87],suv:[4.8,2.03],coupe:[4.45,1.94],pickup:[5.25,2.02],van:[5.1,1.98]};
+import {VEHICLES} from './vehicle-data.js?v=real-fleet-10';
+// Everyday traffic uses the eight added real models; Ferrari stays in the garage.
+export const FLEET_TYPES=VEHICLES.filter(v=>v.id!=='clubsport').map(v=>v.id);
+export const FLEET_FOOTPRINTS=Object.fromEntries(VEHICLES.map(v=>[v.id,[v.length,v.width]]));

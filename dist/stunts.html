@@ -7,7 +7,7 @@
   <meta name="description" content="Three tracks. Big jumps. One perfect run. Play Horizon Track Club, a 3D arcade stunt racer." />
   <title>Horizon — Track Club</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23c8ff4a'/%3E%3Cpath d='M14 46 29 17h9L23 46zm18 0 15-29h7L39 46z' fill='%23172329'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="style.css?v=keyboard-3" />
+  <link rel="stylesheet" href="style.css?v=real-fleet-10" />
 </head>
 <body>
   <canvas id="world" tabindex="0" aria-label="3D racing track. Hold W to accelerate and A or D to steer."></canvas>
@@ -32,8 +32,8 @@
       <div class="play-row"><button id="play-button" class="primary-button"><span>LET’S DRIVE</span><span class="button-arrow">↗</span></button><div class="play-caption">WASD.<br>YOU’RE IN CONTROL.</div></div>
       <div class="keyboard-hint"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span><span>to drive</span><span class="hint-divider"></span><span class="key wide">SHIFT</span><span>to boost</span></div>
     </div>
-    <div class="scene-label"><span class="live-dot"></span> H-01 / CLUBSPORT <span>↘</span></div>
-    <div class="vehicle-info"><span class="eyebrow">YOUR RIDE</span><strong>H-01 <span>CLUBSPORT</span></strong><div class="paint-options" role="group" aria-label="Car color"><button class="paint active" data-paint="#c8ff4a" style="--paint:#c8ff4a" aria-label="Lime car"></button><button class="paint" data-paint="#f47b50" style="--paint:#f47b50" aria-label="Coral car"></button><button class="paint" data-paint="#f1eee4" style="--paint:#f1eee4" aria-label="Ivory car"></button><button class="paint" data-paint="#9e93ff" style="--paint:#9e93ff" aria-label="Lilac car"></button></div></div>
+    <div class="scene-label"><span class="live-dot"></span> FERRARI / 458 ITALIA <span>↘</span></div>
+    <div class="vehicle-info"><span class="eyebrow">YOUR RIDE</span><strong>FERRARI <span>458 ITALIA</span></strong><div class="paint-options" role="group" aria-label="Car color"><button class="paint active" data-paint="#c8ff4a" style="--paint:#c8ff4a" aria-label="Lime car"></button><button class="paint" data-paint="#f47b50" style="--paint:#f47b50" aria-label="Coral car"></button><button class="paint" data-paint="#f1eee4" style="--paint:#f1eee4" aria-label="Ivory car"></button><button class="paint" data-paint="#9e93ff" style="--paint:#9e93ff" aria-label="Lilac car"></button></div></div>
     <section class="track-picker" aria-label="Choose your track">
       <div class="track-heading"><span>CHOOSE YOUR PLAYGROUND</span><span>03 TRACKS / ALL UNLOCKED</span></div>
       <div id="track-options"></div>
@@ -54,6 +54,6 @@
   <section id="finish-overlay" class="modal-overlay hidden" aria-labelledby="finish-title"><div class="modal finish-card"><div id="medal" class="medal">✦</div><div class="eyebrow" id="finish-eyebrow">FINISH LINE</div><h2 id="finish-title">RUN COMPLETE.</h2><div class="finish-time" id="finish-time">01:22.43</div><div class="record-label hidden" id="new-record">↗ NEW PERSONAL BEST</div><div class="finish-stats"><div><span>TOP SPEED</span><strong id="finish-speed">210 <small>KM/H</small></strong></div><div><span>JUMPS LANDED</span><strong id="finish-jumps">3</strong></div><div><span>AIR TIME</span><strong id="finish-air">4.2 <small>SEC</small></strong></div></div><button id="again-button" class="primary-button">ONE MORE RUN <span>↗</span></button><button id="next-button" class="secondary-button">NEXT TRACK →</button><button id="finish-exit-button" class="text-button">BACK TO TRACK SELECTION</button></div></section>
   <section id="help-overlay" class="modal-overlay hidden" aria-labelledby="help-title"><div class="modal help-card"><button class="close-button" id="close-help" aria-label="Close help">×</button><div class="eyebrow">A QUICK DRIVER’S BRIEFING</div><h2 id="help-title">FIND YOUR LINE.</h2><p>Race to the finish through every checkpoint. Build speed before the striped ramps, fly across the gaps, and steer through the air to line up your landing.</p><div class="controls-grid"><span><b>W / ↑</b> Accelerate</span><span><b>S / ↓</b> Brake / hold to reverse</span><span><b>W + A / W + D</b> Drive and steer left / right</span><span><b>SHIFT</b> Nitro boost</span><span><b>SPACE</b> Tighter turn</span><span><b>R</b> Checkpoint reset</span><span><b>C</b> Camera view</span><span><b>ESC / P</b> Pause</span></div><p class="help-note">Missed the landing? Press R to return to your last checkpoint (+3 seconds). Hold W and A together to turn left, or W and D together to turn right. A/D steers the wheels; the car changes direction when moving. Release W to coast, or hold S to brake and reverse. Nitro recharges while you drive. On a phone, use the on-screen steering and pedals.</p><button id="got-it-button" class="primary-button">GOT IT. LET’S GO. <span>↗</span></button></div></section>
   <div id="fatal-error" class="hidden"><h2>Let’s get you back on track.</h2><p id="error-message"></p><button onclick="location.reload()">TRY AGAIN</button></div>
-  <script type="module" src="stunt.js?v=world-1"></script>
+  <script type="module" src="stunt.js?v=real-fleet-10"></script>
 </body>
 </html>

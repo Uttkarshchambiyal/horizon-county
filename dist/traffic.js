@@ -1,6 +1,6 @@
-import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=career-9';
-import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=career-9';
-import {vehicleSpec} from './vehicles.js?v=career-9';
+import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=real-fleet-10';
+import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=real-fleet-10';
+import {vehicleSpec} from './vehicles.js?v=real-fleet-10';
 
 // A small, deterministic fleet follows continuous right-hand lanes. It runs on
 // the same fixed clock as the player, so pausing freezes cars and signals.
@@ -110,7 +110,7 @@ export function collideTraffic(state,traffic){
   const spec=vehicleSpec(state.vehicleId);let hit=false;
   for(const car of traffic.cars){
     if(Math.hypot(state.x-car.x,state.z-car.z)>7||Math.abs((state.y??car.y)-(car.y??state.y))>2.3)continue;
-    const af={x:-Math.sin(state.heading),z:-Math.cos(state.heading)},ar={x:Math.cos(state.heading),z:-Math.sin(state.heading)},bf={x:car.tx??-Math.sin(car.heading),z:car.tz??-Math.cos(car.heading)},br={x:-bf.z,z:bf.x},[length,width]=FLEET_FOOTPRINTS[car.type]||FLEET_FOOTPRINTS.sedan;
+    const af={x:-Math.sin(state.heading),z:-Math.cos(state.heading)},ar={x:Math.cos(state.heading),z:-Math.sin(state.heading)},bf={x:car.tx??-Math.sin(car.heading),z:car.tz??-Math.cos(car.heading)},br={x:-bf.z,z:bf.x},[length,width]=FLEET_FOOTPRINTS[car.type]||FLEET_FOOTPRINTS.clubsport;
     const dx=state.x-car.x,dz=state.z-car.z;let overlap=Infinity,normal=null;
     for(const axis of[af,ar,bf,br]){
       const ra=(spec.length/2+.04)*Math.abs(af.x*axis.x+af.z*axis.z)+(spec.width/2+.04)*Math.abs(ar.x*axis.x+ar.z*axis.z),rb=(length/2+.04)*Math.abs(bf.x*axis.x+bf.z*axis.z)+(width/2+.04)*Math.abs(br.x*axis.x+br.z*axis.z),projection=dx*axis.x+dz*axis.z,depth=ra+rb-Math.abs(projection);

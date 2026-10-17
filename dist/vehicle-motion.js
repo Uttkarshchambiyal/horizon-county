@@ -5,11 +5,11 @@ export function wheelAngles(steerAngle,wheelbase,track){
   return steerAngle>0?{left:sign*inner,right:sign*outer}:{left:sign*outer,right:sign*inner};
 }
 export function animateVehicle(vehicle,state){
-  const {spec}=vehicle,angles=wheelAngles(state.steerAngle||0,spec.wheelbase,spec.width*.84);
+  const {spec}=vehicle,angles=wheelAngles(state.steerAngle||0,spec.wheelbase,spec.track||spec.width*.84);
   for(const pivot of vehicle.steerWheels)pivot.rotation.y=pivot.position.x<0?angles.left:angles.right;
   for(let i=0;i<vehicle.wheels.length;i++){
     const wheel=vehicle.wheels[i];if(wheel.userData.restRoll===undefined)wheel.userData.restRoll=wheel.rotation.x;
-    const side=Math.sign(vehicle.wheelCenters[i]?.position.x||0),factor=1+side*Math.tan(state.steerAngle||0)*spec.width*.42/spec.wheelbase;
+    const side=Math.sign(vehicle.wheelCenters[i]?.position.x||0),factor=1+side*Math.tan(state.steerAngle||0)*(spec.track||spec.width*.84)/2/spec.wheelbase;
     wheel.rotation.x=wheel.userData.restRoll-(state.wheelTravel||0)/spec.radius*factor;
   }
   return angles;

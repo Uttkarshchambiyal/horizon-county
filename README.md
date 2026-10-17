@@ -1,8 +1,8 @@
 # Horizon County
 
-An original, self-contained 3D browser driving world with 36.7 km of connected roads, a downtown grid, Pacific Beach, a coastal highway, Crestline Hills, a harbor and an airfield. Drive a detailed Ferrari 458 Italia, touring sedan or SUV, then explore with fully manual WASD controls. Light two-way traffic and walking sidewalk crowds bring the city and coastal highway to life. Complete delivery jobs and checkpoint races, earn credits, tune each car, set map waypoints and discover six destinations. Includes building, parked-car and moving-car collisions, off-road handling, water recovery, four cameras, three lighting presets, headlight beams and recorded engine audio with RPM, shifts, a horn, nitro, impacts, off-road tires and nearby traffic.
+An original, self-contained 3D browser driving world with 36.7 km of connected roads, a downtown grid, Pacific Beach, a coastal highway, Crestline Hills, a harbor and an airfield. Drive nine real cars, including the Ferrari 458 Italia, Porsche 930 Turbo, Skyline R34 GT-R and Lamborghini Aventador, then explore with fully manual WASD controls. Light two-way traffic and walking sidewalk crowds bring the city and coastal highway to life. Complete delivery jobs and checkpoint races, earn credits, tune each car, set map waypoints and discover six destinations. Includes building, parked-car and moving-car collisions, off-road handling, water recovery, four cameras, three lighting presets, headlight beams and recorded engine audio with RPM, shifts, a horn, nitro, impacts, off-road tires and nearby traffic.
 
-This is a compact arcade browser world inspired by city-and-countryside driving games. The map, touring sedan and SUV designs are original; the Ferrari 458 Italia is a credited external model by vicent091036 (CC BY 4.0). Photographed road/ground materials and an outdoor HDR reflection environment are included locally. This is an arcade browser game with a compact map. Building interiors, pedestrian impact/ragdoll gameplay and multiplayer are outside its scope. No account or game backend is needed; credits, completed events, personal bests, per-car upgrades, garage, paint, settings and discoveries save in this browser only. Active runs restart after a reload; earned progress remains.
+This is a compact arcade browser world inspired by city-and-countryside driving games. The map is original. All nine car models are credited external assets under CC BY 4.0; sources and modifications are listed in the game credits. Photographed road/ground materials and an outdoor HDR reflection environment are included locally. This is an arcade browser game with a compact map. Building interiors, pedestrian impact/ragdoll gameplay and multiplayer are outside its scope. No account or game backend is needed; credits, completed events, personal bests, per-car upgrades, garage, paint, settings and discoveries save in this browser only. Active runs restart after a reload; earned progress remains.
 
 ## Play locally
 
@@ -23,7 +23,7 @@ Open http://127.0.0.1:4173, choose a starting district, then select **Start Driv
 - Use the time-of-day button for golden hour, daylight or blue hour.
 
 - **J:** jobs and races. Choose one of three stopped-pickup deliveries or three ordered-checkpoint races. Follow the road route on the minimap and the terrain-following target ring. Stop in a delivery ring for 1.25 seconds to collect/deliver. Races require a stopped start and three-second countdown. Delivery clocks start after pickup; race clocks start at GO. Recovering adds ten seconds and forfeits the clean-delivery bonus. Fast travel is disabled during a run; returning to district selection abandons it. Opening any overlay pauses the run.
-- **G:** garage. Choose Ferrari 458 Italia, T-04 Meridian or R-09 Summit and change paint. Each has different acceleration, steering, road speed and off-road performance. Changing cars stops the car without ending the drive. Spend earned credits on three levels each of engine, brakes, tires and nitro for the selected car. Levels affect real acceleration (+6%/level), brake force (+10%), grip (+6%), boost recharge (+12%) and boosted top speed (+3%). Upgrades stay with their car. All three cars remain available from the start. Rewards include the advertised base, a time bonus up to $150 and a $100 collision-free delivery bonus. Failed/abandoned runs do not pay or spend credits. Repeat runs earn rewards and can improve saved personal bests.
+- **G:** garage. Choose Ferrari 458 Italia, BMW E36 M3, BMW X6 M Competition, Porsche 911 (930) Turbo, Nissan Skyline R34 GT-R, Toyota AE86 Trueno, Lamborghini Aventador Roadster, Toyota Corolla KE80 or Lamborghini Urus. Change paint on eight models; the Urus keeps its source factory-yellow texture. Each has different acceleration, steering, road speed and off-road performance. Changing cars stops the car without ending the drive. Spend earned credits on three levels each of engine, brakes, tires and nitro for the selected car. Levels affect real acceleration (+6%/level), brake force (+10%), grip (+6%), boost recharge (+12%) and boosted top speed (+3%). Upgrades stay with their car. All nine cars are available from the start. Rewards include the advertised base, a time bonus up to $150 and a $100 collision-free delivery bonus. Failed/abandoned runs do not pay or spend credits. Repeat runs earn rewards and can improve saved personal bests.
 - **O:** settings. Cycle Smooth / Performance / Clarity graphics, turn light traffic off or on, or change time of day. **Smooth is the default**, including migration from the previous expensive Clarity default. It starts at native CSS resolution, caps the framebuffer at 2.1 million pixels, omits full-world shadow passes and preserves nearby geometry. It measures delivered frame intervals once per second, targets 60 FPS, and reduces distant detail and resolution after sustained slow delivery. Recovery is gradual after 15 stable seconds to prevent repeated quality changes. Performance has a 1.4-million-pixel budget and shorter scenery range. Clarity is opt-in, with high-DPI rendering (4.2-million-pixel cap), 1024-pixel diffuse facade atlases and 2048-pixel sun shadows. Smooth/Performance use 512-pixel facade atlases. Soft local contact decals ground the player, buildings, trees and nearby pedestrians without another world-shadow render. Daylight, golden hour and blue hour have tuned sky/ground illumination, reflection strength, fog and exposure. Dielectric masonry, smoother facade glazing and restrained road-normal relief distinguish materials. The live FPS counter is visible while driving; settings also show mean frame time and the 95th percentile. These are measured frame intervals, not a guaranteed hardware-independent 60 FPS. **Start 60 Second Drive** begins a foreground rAF capture and returns to driving. The report records average FPS, P50/P95/P99, 1% lows, maximum frame time, >33/>50 ms frames, CPU wall time, render-submission time and average draws/triangles. JSON includes viewport/device-pixel ratio, quality/tier/resolution configurations and per-district results. Overlays and hidden tabs pause recording, with the first resume interval excluded; foreground stalls count in full. GPU time is not measured. Reports are downloadable and stay in memory for the session.
 
 The city contains 489 buildings across 13 architectural types with 24 facade atlases. Brick, plaster and concrete photographs provide surface detail; four floors/bays per atlas vary frames, blinds, colour, weathering and night lighting. Separate roughness and relief masks keep window glass smoother than masonry. The city has 13 architectural types and 30 populated blocks. Street frontage includes balconies, brick lofts with fire escapes, Art Deco buildings, glass and round towers, motels, shops, warehouses, parking garages, houses and villas. Parks, a fountain plaza, parking lots, a service station, 989 street trees and bus shelters occupy the gaps. Another 515 storefront/garden details add cafe terraces, planters and bike racks at building entrances. The plaza fountain and fuel-station fixtures are solid. The coast has scattered hillside villas and low-rise hotels. Five beach recreation areas group umbrellas, loungers, towels, lifeguard towers, surfboards, surf-club kiosks, showers and volleyball courts. Four signed mountain viewpoints have gravel turnouts and footpaths; two have camping areas. Trees and rock outcrops stay beyond road shoulders and away from recreation areas. The hills have 830 regional pines and 130 birches, including denser groves along the pass, and textured two-cluster inland crowns. Rendered palms and city/inland trunks register matching collision shapes; vegetation placement also clears the full runway width. Gravel follows the terrain. Parked cars have marked bays. Major structures use oriented footprints, while rocks, tree trunks and fountains have circular collision shapes to avoid invisible square corners. Photographed sand and rock are blended into the ground by position/elevation. Pacific Beach now starts on the coast highway with the shore alongside.
@@ -45,7 +45,7 @@ npm test
 
 The checks exercise the real game entrypoint with a stub renderer, including keyboard input, steering HUD, map, waypoint, district travel, help, pause/resume, lighting, garage, graphics settings, traffic toggle and canvas focus. A three-minute mixed traffic simulation checks all 18 vehicles stay on roads, clear static scenery and maintain separation, while the idle player remains stationary. Dedicated cases verify red/green stops, following, player braking, disabled collisions and car selection/recovery. Simulation checks drive the central avenue, Marina Drive, the complete 9.3 km coastal loop and 3.2 km hill pass without collisions or road gaps, using lower speeds for tight hairpins. They verify safe spawns, no automatic movement, W+A/W+D steering, solid buildings, water recovery, matching road/terrain heights and upward road faces. The legacy stunt-track and keyboard regression checks also run.
 
-New checks verify wheel-first stationary steering, inside/outside wheel geometry, rear alignment, rolling distance, fixed brake assemblies, yaw/wheelbase consistency, reverse steering, engine RPM/gear changes, facade variants and regional road clearance. The actual Ferrari GLB is parsed in tests: 100,199 triangles plus a 242-triangle coupe roof/rear-glass addition, four live rolling wheels, two steering pivots, correct ground alignment, shared paint/brake materials and attribution metadata. The expanded GLB loads locally without a runtime Draco decoder. It was simplified offline from 358,788 triangles / 15.2 MB to 100,199 triangles / 4.1 MB using meshoptimizer v1.0; nodes, UVs, normals and wheel assemblies are retained. Normals influence the simplification, with a 0.006 relative error cap. It remains a self-contained asset; the loading screen reports progress and a procedural fallback remains available if loading fails.
+New checks verify wheel-first stationary steering, inside/outside wheel geometry, rear alignment, rolling distance, fixed brake assemblies, yaw/wheelbase consistency, reverse steering, engine RPM/gear changes, facade variants and regional road clearance. The actual Ferrari GLB is parsed in tests: 100,199 triangles plus a 242-triangle coupe roof/rear-glass addition, four live rolling wheels, two steering pivots, correct ground alignment, shared paint/brake materials and attribution metadata. The expanded GLB loads locally without a runtime Draco decoder. It was simplified offline from 358,788 triangles / 15.2 MB to 100,199 triangles / 4.1 MB using meshoptimizer v1.0; nodes, UVs, normals and wheel assemblies are retained. Normals influence the simplification, with a 0.006 relative error cap. It remains a self-contained asset; the loading screen reports progress and a fallback made from the same real-car geometry remains visible if the detailed download fails. Reselect the car to retry.
 
 Static objects use a 240 m spatial index. Full nearby foliage and columns blend into simpler distant geometry; smaller street details have shorter visibility ranges while large architecture keeps its skyline range. Conservative camera-frustum culling omits instances behind the camera, with a 35 m margin for quick turns. Visibility buffers refresh after 8 m of travel, a camera turn, or an explicit spawn/quality change. Uploads cover only active buffer ranges, and bounding spheres are reused. Terrain remains tiled and cheap road/facade geometry remains merged by material. The actual 100,441-triangle player car retains its existing model, working wheels and material detail.
 
@@ -55,11 +55,11 @@ Where EXT_clip_control is available, reverse depth preserves depth precision whi
 
 The deterministic submission check (57-degree camera, 1.6 aspect, Smooth, initial traffic positions, active race marker 40 m ahead) reports scenery, traffic, nearby pedestrians and activity marker, without the player car or extra Clarity shadow passes:
 
-| Camera | Before activities triangles / calls | Activities update triangles / calls |
+| Camera | Activities update triangles / calls | Real-car update triangles / calls |
 | --- | --- | --- |
-| Downtown | 292,954 / 157 | 292,874 / 162 |
-| Pacific Beach | 258,028 / 145 | 258,232 / 150 |
-| Crestline Hills | 180,844 / 62 | 181,104 / 66 |
+| Downtown | 292,874 / 162 | 296,965 / 144 |
+| Pacific Beach | 258,232 / 150 | 262,238 / 136 |
+| Crestline Hills | 181,104 / 66 | 181,104 / 66 |
 
 These are geometry submission counts, not measured GPU frame rates. All three checked views remain below the existing 320,000-triangle / 165-call scenery budgets. The framebuffer budgets and Smooth default remain in place. Distant vehicle batching offsets the cost of the added scenery and people. `check-district-life.mjs` checks all block scenes, clear pedestrian paths, safe curb bays, matching deck/render heights, marina openings, pier driving, floating boats, vegetation clearance and cached frozen pedestrian poses. The depth, frame-budget, handling, actual-model, audio, traffic, world and UI regressions also run. UI checks verify that the first ready scene renders without waiting for a foreground animation frame, and that both pedestrian and traffic clocks pause in overlays.
 
@@ -84,7 +84,7 @@ Fresh live browser QA is unverified for this activities release: native Safari/B
 - `dist/engine-audio.js`: recorded engine loop, different vehicle voices, bounded effects, spatial passing traffic, surface noise and immediate pause/mute behavior.
 - `dist/region-data.js`, `dist/region-view.js`: beach/mountain destinations and road-clear regional placements.
 - `dist/facade-materials.js`: photographic facade atlases, roughness, relief and night window maps.
-- `dist/vehicles.js`, `dist/sports-car.js`: original sedan/SUV and fallback models, handling specifications, and the detailed Ferrari loader with animated wheel pivots.
+- `dist/vehicles.js`, `dist/sports-car.js`: nine actual model loaders, bounded detailed-car residency, and independent steering/rolling pivots. `vehicle-data.js` contains arcade handling profiles and source identities; `real-car-specs.js` stores measured mesh dimensions.
 - `dist/traffic.js`, `dist/traffic-view.js`, `dist/fleet-data.js`, `dist/traffic-models.js`: fixed-step traffic simulation and six lightweight animated fleet models.
 - `dist/world-streaming.js`, `dist/render-quality.js`: spatial instance visibility, material batching, distance fading, terrain sectors, pixel budgets and stable shadows.
 - `dist/street-details.js`: shared visual/collision layout for storefront and garden details.
@@ -98,4 +98,47 @@ Fresh live browser QA is unverified for this activities release: native Safari/B
 
 Engine audio by domasx2 is CC0; see `dist/assets/audio/CREDITS.md`.
 
-All runtime resources ship under `dist/`. Three.js 0.180.0 is distributed under the MIT license; Barlow fonts use the SIL Open Font License. Their licenses are in `dist/vendor/`. Poly Haven environment assets are CC0; see `dist/assets/CREDITS.md`. Ferrari attribution and modifications are in `dist/assets/cars/ATTRIBUTION.md` and `/credits.html`.
+All runtime resources ship under `dist/`. Three.js 0.180.0 is distributed under the MIT license; Barlow fonts use the SIL Open Font License. Their licenses are in `dist/vendor/`. Poly Haven environment assets are CC0; see `dist/assets/CREDITS.md`. Car-model attribution, creator links, thumbnail credits and modifications are in `dist/assets/cars/ATTRIBUTION.md` and `/credits.html`.
+
+## Real-car collection
+
+The nine-car garage uses self-contained local GLBs. Only the selected detailed
+model downloads, and at most three detailed cars stay resident. Rapid selection
+changes cancel the old fetch; inactive cars can return to their matching real
+mesh fallback without disposing shared traffic geometry. Existing `touring`
+and `trail` save IDs now select the BMW M3 and X6, preserving paints/upgrades.
+Every car supports the same four upgrade types. Handling and engine pitch are
+balanced arcade profiles, not manufacturer performance specifications.
+
+All 18 moving vehicles and 214 parked vehicles use the eight added licensed
+models. The heavier Ferrari stays in the playable collection. NPC bodies are
+baked and instanced by model/material; tires roll by travel distance and front
+wheels steer independently. Their close meshes are 2,064–3,362 triangles per
+car. Seven distant meshes use 599–719 triangles; the BMW keeps its 3,362-triangle
+close mesh in a single distant draw to preserve its roof and trim. Paint-mask
+attributes keep rubber and glazing from inheriting the body paint colour.
+The Ferrari loading fallback retains unsimplified exterior panels and real
+wheel geometry rather than using the damaged aggressive LOD.
+
+`scripts/prepare-real-cars.mjs` builds the new standard GLBs, measured specs,
+colour-baked traffic meshes and `assets/cars/preparation.json` offline. Supply
+an original-source directory (filenames from `assets/cars/sources.json`) and
+official meshoptimizer v1.0 decoder/simplifier modules as its three arguments.
+Python 3 + Pillow decode source base-colour images during preparation only.
+`CAR_FILTER=<garage-id>` optionally regenerates one cached entry. The shipped
+player models retain original embedded images/UVs and require no runtime
+meshopt decoder. Negative-determinant node transforms reverse triangle winding
+when flattened. Floors and detached props are removed and all four wheel
+assemblies are independently rigged. License provenance includes source hashes.
+
+`check-real-fleet.mjs` parses all nine shipping models, validates embedded
+texture bytes, dimensions, four wheel pivots, stationary steering, rolling,
+shared-resource safety, failed fetches, cancellation, cache eviction and
+legacy/new save upgrades. It strips texture references for Node geometry tests;
+those tests do not measure browser texture decoding or GPU frame rates.
+
+Live checks for the real-car update used the native browser connection, moving
+to Comet at the user's request. The garage's nine-card layout, textured BMW M3,
+Urus and Skyline, steering pivots, and the BMW distant mesh were inspected.
+Further GPU checks, physical phone input and a sustained 60 FPS driving capture
+are not established by the isolated model viewer or automated tests.

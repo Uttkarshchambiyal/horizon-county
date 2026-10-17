@@ -1,5 +1,6 @@
+import {VEHICLES} from './vehicle-data.js?v=real-fleet-10';
 const SAVE_KEY='horizon-career-v1';
-const VEHICLE_IDS=['clubsport','touring','trail'];
+const VEHICLE_IDS=VEHICLES.map(v=>v.id);
 export const UPGRADES=[
   {id:'engine',name:'Engine tune',description:'+6% acceleration per level',costs:[450,950,1700]},
   {id:'brakes',name:'Brake kit',description:'+10% stopping force per level',costs:[350,750,1350]},
