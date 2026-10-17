@@ -1,4 +1,4 @@
-import {REAL_CAR_SPECS} from './real-car-specs.js?v=axle-steering-11';
+import {REAL_CAR_SPECS} from './real-car-specs.js?v=high-speed-steering-12';
 // Driving figures are balanced arcade tuning, not manufacturer performance data.
 const catalogue=[
   {id:'clubsport',name:'Ferrari 458 Italia',className:'ITALIAN SPORTS CAR',description:'Mid-engine V8 character, sculpted bodywork and five-spoke wheels.',color:0xcb2527,top:58,boostTop:77,accel:9.5,offRoad:25,grip:15,voice:1,source:'ferrari-458',author:'vicent091036',model:'57bf6cc56931426e87494f554df1dab6'},

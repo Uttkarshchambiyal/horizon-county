@@ -6,6 +6,13 @@ export function wheelAngles(steer,wheelbase,track){
   return {left:Math.atan(wheelbase*k/(1-k*track/2)),right:Math.atan(wheelbase*k/(1+k*track/2))};
 }
 export const rearAxle=spec=>(spec.wheels[2][2]+spec.wheels[3][2])/2;
+// Deliberate arcade road tuning: retain steering authority at motorway speeds.
+// Smoothly add up to 60% cornering allowance; the axle path still obeys the
+// visible rack angle and a finite lateral-acceleration budget. Not tire data.
+export function roadCorneringGrip(speed,grip){
+  const t=Math.max(0,Math.min(1,(Math.abs(speed)-20)/35));
+  return grip*(1+.6*t*t*(3-2*t));
+}
 export function steeringLimit(speed,wheelbase,grip){
   return Math.min(.56,Math.atan(grip*wheelbase/Math.max(1,speed*speed)));
 }

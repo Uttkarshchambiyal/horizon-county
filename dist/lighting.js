@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import {surfaceDepthBias} from './render-quality.js?v=axle-steering-11';
+import {surfaceDepthBias} from './render-quality.js?v=high-speed-steering-12';
 
 export const LIGHTING_MOODS=[
   {name:'GOLDEN HOUR',top:0x81a8c4,bottom:0xe3cdb0,sun:0xffc38c,power:3.2,ambient:1.05,sky:0xc2d8e7,ground:0x817052,exposure:1.04,environment:.62,fog:.00039},

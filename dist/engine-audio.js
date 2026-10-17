@@ -1,5 +1,5 @@
-import {vehicleSpec} from './vehicle-data.js?v=axle-steering-11';
-import {clamp} from './world-data.js?v=axle-steering-11';
+import {vehicleSpec} from './vehicle-data.js?v=high-speed-steering-12';
+import {clamp} from './world-data.js?v=high-speed-steering-12';
 
 export function engineTelemetry(state,input={}){
   const speed=Math.abs(state.speed),gear=state.speed<-.1?-1:speed<.2?0:Math.min(6,1+[15,26,37,49,61].filter(v=>speed>v).length);

@@ -1,9 +1,9 @@
-import {finishPlayerWheels} from './wheel-finish.js?v=axle-steering-11';
+import {finishPlayerWheels} from './wheel-finish.js?v=high-speed-steering-12';
 import * as THREE from './vendor/three.module.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
-import {VEHICLES,vehicleSpec} from './vehicle-data.js?v=axle-steering-11';
-import {fleetModel} from './traffic-models.js?v=axle-steering-11';
-import {mountSportsCar} from './sports-car.js?v=axle-steering-11';
+import {VEHICLES,vehicleSpec} from './vehicle-data.js?v=high-speed-steering-12';
+import {fleetModel} from './traffic-models.js?v=high-speed-steering-12';
+import {mountSportsCar} from './sports-car.js?v=high-speed-steering-12';
 export {VEHICLES,vehicleSpec};
 function disposeTree(root,keep=new Set()){
   const geometries=new Set(),materials=new Set(),textures=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m&&!keep.has(m))materials.add(m);});

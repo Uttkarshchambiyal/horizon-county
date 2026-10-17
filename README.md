@@ -153,6 +153,13 @@ right front tires use Ackermann angles with one instantaneous turning centre.
 Keyboard rack response is smoothed, and the actual rack angle is limited by
 speed, road grip and tire upgrades. That same angle drives physics and visible
 steering. Steering airborne tires does not add a ground-contact yaw force.
+Road handling adds a smooth game-tuned cornering allowance above 72 km/h,
+reaching at most 60% extra allowance at 198 km/h. This prevents the previous
+inverse-square steering clamp from leaving A/D ineffective at high speed.
+High-speed keyboard engagement, opposite-lock response and self-centering are
+quicker; low-speed turning and off-road grip keep their existing limits.
+This allowance is arcade balancing, not measured manufacturer tire/downforce
+data. The car and visible wheels still share one bounded axle trajectory.
 This remains a browser kinematic/arcade model, not a complete tire-force or
 suspension simulator. Background: [MathWorks Ackermann and bicycle kinematics](https://www.mathworks.com/help/robotics/ug/mobile-robot-kinematics-equations.html).
 
@@ -167,6 +174,8 @@ Player wheels retain their authored rim centres/spokes. Fragile source rubber
 and outer fragments are replaced by round, grounded annular rubber shells,
 with subdued tread bump and roughness. A radial rim blend reduces the visible
 spoke strobing at road speed; this is a lightweight visual approximation.
+Its opacity is capped at 52% so source spokes remain visible while rotating,
+instead of becoming an almost opaque, apparently stationary disc at speed.
 Traffic gets concentric round tires, rim lips, hubs and model-specific spoke
 counts in its existing one-batch wheel geometry. Preparation JSON describes
 the original baked assets; these wheel changes happen at runtime. Original
@@ -176,6 +185,9 @@ GLB files and creator credits are retained.
 front-first displacement, fixed wheelbase, common Ackermann turn centre,
 individual rolling distances, zero spin during stationary steering, high-speed
 grip in both directions, airborne steering and integration step consistency.
+It also requires useful heading changes at 160 km/h and near each car's boost
+top speed, reversal within 200 ms, centering, visible rim detail, and bounded
+road/off-road forces with stock and upgraded tires for all nine profiles.
 The existing real entrypoint, three-minute traffic, all-six-activity, world,
 collision, audio and source-model regressions also pass. Comet inspection used
 an isolated test scene for stationary steering, a low-speed left turn and a
@@ -183,3 +195,8 @@ an isolated test scene for stationary steering, a low-speed left turn and a
 followed by physical KeyA and KeyD input produced the correct opposite
 inside/outside rolling histories. It is not a full-map
 FPS benchmark or proof of full simulator fidelity.
+High-speed follow-up inspection in Comet verified a right turn near 160 km/h,
+then physical KeyA/KeyD input from 160/240 km/h starting speeds. The correct
+outer wheels accumulated longer distances, the body followed the turn and
+the wheels centered after release. The speed blend left the authored spokes
+visible. These isolated checks do not measure full-map FPS.

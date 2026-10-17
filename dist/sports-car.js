@@ -1,4 +1,4 @@
-import {finishPlayerWheels} from './wheel-finish.js?v=axle-steering-11';
+import {finishPlayerWheels} from './wheel-finish.js?v=high-speed-steering-12';
 import * as THREE from './vendor/three.module.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 

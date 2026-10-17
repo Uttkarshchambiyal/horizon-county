@@ -1,6 +1,6 @@
-import {advanceAxles,steeringLimit,accumulateWheelTravel} from './steering.js?v=axle-steering-11';
-import {clamp} from './world-data.js?v=axle-steering-11';
-import {vehicleSpec} from './vehicle-data.js?v=axle-steering-11';
+import {advanceAxles,steeringLimit,accumulateWheelTravel,roadCorneringGrip} from './steering.js?v=high-speed-steering-12';
+import {clamp} from './world-data.js?v=high-speed-steering-12';
+import {vehicleSpec} from './vehicle-data.js?v=high-speed-steering-12';
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function newDriveState(world,spawn=world.spawns[0],vehicleId='clubsport'){
   return {x:spawn.x,z:spawn.z,y:world.surface(spawn.x,spawn.z).height+.55,heading:spawn.heading||0,motionHeading:spawn.heading||0,
@@ -36,10 +36,11 @@ export function stepDrive(state,world,input,dt){
   state.maxSpeed=Math.max(state.maxSpeed,Math.abs(state.speed));
   // The rack angle drives the rear-axle path. There is no separate heading
   // filter that can make the body slide away from its visible wheel direction.
-  const steer=clamp(input.steer||0,-1,1),steeringRate=steer===0?5.5:steer*state.steering<0?5:3.8;
+  const steer=clamp(input.steer||0,-1,1),fastResponse=clamp((speed-20)/25,0,1),steeringRate=steer===0?5.5+4.5*fastResponse:steer*state.steering<0?5+7*fastResponse:3.8+3.2*fastResponse;
   state.steering=approach(state.steering,steer,steeringRate*dt);
-  const grip=(start.onRoad?spec.grip:spec.suv?9:7)*(tune.grip??1)*(input.drift?.72:1);
-  const limit=steeringLimit(Math.max(Math.abs(oldSpeed),Math.abs(state.speed)),spec.wheelbase,grip);
+  const turnSpeed=Math.max(Math.abs(oldSpeed),Math.abs(state.speed));
+  const grip=(start.onRoad?roadCorneringGrip(turnSpeed,spec.grip):spec.suv?9:7)*(tune.grip??1)*(input.drift?.72:1);
+  const limit=steeringLimit(turnSpeed,spec.wheelbase,grip);
   state.steerAngle=clamp(approach(state.steerAngle,-state.steering*limit,(2.9/(1+Math.abs(state.speed)/30))*dt),-limit,limit);
   const oldX=state.x,oldZ=state.z,oldHeading=state.heading,distance=(oldSpeed+state.speed)*.5*dt;
   let proposedX,proposedZ;

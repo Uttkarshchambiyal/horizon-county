@@ -1,9 +1,9 @@
-import {wheelAngles} from './steering.js?v=axle-steering-11';
+import {wheelAngles} from './steering.js?v=high-speed-steering-12';
 import * as THREE from './vendor/three.module.min.js';
-import {fleetModel,fleetProxy,FLEET_TYPES,enableFleetPaint} from './traffic-models.js?v=axle-steering-11';
-import {signalState} from './traffic.js?v=axle-steering-11';
-import {terrainHeight} from './world-data.js?v=axle-steering-11';
-import {enableInstanceFade,distanceFade} from './render-quality.js?v=axle-steering-11';
+import {fleetModel,fleetProxy,FLEET_TYPES,enableFleetPaint} from './traffic-models.js?v=high-speed-steering-12';
+import {signalState} from './traffic.js?v=high-speed-steering-12';
+import {terrainHeight} from './world-data.js?v=high-speed-steering-12';
+import {enableInstanceFade,distanceFade} from './render-quality.js?v=high-speed-steering-12';
 
 export function buildTrafficView(scene,world,traffic){
   const group=new THREE.Group();group.name='Local animated traffic fleet';scene.add(group);
