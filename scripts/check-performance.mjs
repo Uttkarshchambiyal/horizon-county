@@ -5,11 +5,13 @@ import {buildOpenWorld} from '../dist/world-view.js';
 import {makeTraffic} from '../dist/traffic.js';
 import {buildTrafficView} from '../dist/traffic-view.js';
 import {fleetModel,FLEET_TYPES} from '../dist/traffic-models.js';
-const ctx=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});globalThis.document={createElement:()=>({getContext:()=>ctx})};
-const scene=new THREE.Scene(),world=makeOpenWorld(),view=buildOpenWorld(scene,world),traffic=makeTraffic(world),fleet=buildTrafficView(scene,world,traffic);
+import {buildActivityView} from '../dist/activity-view.js';
+const ctx=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});globalThis.document={createElement:()=>({getContext:()=>ctx})};
+const scene=new THREE.Scene(),world=makeOpenWorld(),view=buildOpenWorld(scene,world),traffic=makeTraffic(world),fleet=buildTrafficView(scene,world,traffic),activityView=buildActivityView(scene,world);
 const shapes=new Set();
 for(const type of FLEET_TYPES){const model=fleetModel(type);shapes.add([model.spec.length,model.spec.height,model.spec.wheelbase].join(','));assert.equal(model.wheels.length,4);let triangles=0;for(const part of[...model.parts,...model.wheelParts]){for(const v of part.geometry.attributes.position.array)assert.ok(Number.isFinite(v),type+' geometry must be finite');triangles+=(part.geometry.index?.count||part.geometry.attributes.position.count)/3*(model.wheelParts.includes(part)?4:1);}assert.ok(triangles<2600,'Each traffic vehicle must stay within its geometry budget');}assert.equal(shapes.size,6);
 for(const spawn of world.spawns){
+  activityView.update({target:()=>({x:spawn.x-Math.sin(spawn.heading)*40,z:spawn.z-Math.cos(spawn.heading)*40}),active:{definition:{kind:'race'}}},spawn,1);
   fleet.update(.5,spawn);view.population.update(1,spawn);
   const camera=new THREE.PerspectiveCamera(57,1.6,.18,10000),y=world.surface(spawn.x,spawn.z).height;
   camera.position.set(spawn.x+Math.sin(spawn.heading)*10.5,y+5,spawn.z+Math.cos(spawn.heading)*10.5);camera.lookAt(spawn.x-Math.sin(spawn.heading)*10,y+.8,spawn.z-Math.cos(spawn.heading)*10);camera.updateMatrixWorld();view.visibility.update(spawn.x,spawn.z,'auto',true,camera);scene.updateMatrixWorld(true);

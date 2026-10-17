@@ -4,7 +4,7 @@ import {surfaceDepthBias} from '../dist/render-quality.js';
 import {makeOpenWorld} from '../dist/world-data.js';
 import {buildOpenWorld} from '../dist/world-view.js';
 
-const ctx=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});
+const ctx=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});
 globalThis.document={createElement:()=>({getContext:()=>ctx})};
 const world=makeOpenWorld(),width=1028,height=615,ground=world.surface(6,485).height-.095,ray=new THREE.Raycaster(),up=new THREE.Vector3(0,1,0);
 let reproduced=false;

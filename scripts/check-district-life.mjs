@@ -3,7 +3,7 @@ import * as THREE from '../dist/vendor/three.module.min.js';
 import {makeOpenWorld,terrainHeight,coast} from '../dist/world-data.js';
 import {buildOpenWorld} from '../dist/world-view.js';
 import {newDriveState,stepDrive} from '../dist/driving.js';
-const ctx=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});
+const ctx=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});
 globalThis.document={createElement:()=>({getContext:()=>ctx})};
 const world=makeOpenWorld(),scene=new THREE.Scene(),view=buildOpenWorld(scene,world),{life}=world;
 assert.ok(life.props.length>=400);assert.ok(life.walkers.length>=500);assert.ok(life.parking.length>=120);

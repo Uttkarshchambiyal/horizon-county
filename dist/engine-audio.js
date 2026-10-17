@@ -1,4 +1,4 @@
-import {clamp} from './world-data.js?v=populated-8';
+import {clamp} from './world-data.js?v=career-9';
 
 export function engineTelemetry(state,input={}){
   const speed=Math.abs(state.speed),gear=state.speed<-.1?-1:speed<.2?0:Math.min(6,1+[15,26,37,49,61].filter(v=>speed>v).length);
@@ -16,13 +16,14 @@ export function createEngineAudio(){
   audio.effect=(name,intensity=1)=>{
     const ctx=audio.ctx;if(!ctx||!audio.active||effects.size>=6)return false;
     const now=ctx.currentTime;if(now<(cooldowns.get(name)||0))return false;
-    const duration={horn:.32,impact:.24,boost:.48,shift:.09,overrun:.12,ignition:.5}[name];if(!duration)return false;
+    const cue={tick:[440,440],go:[880,1175],checkpoint:[659,880],reward:[523,1046],accept:[392,659],failed:[220,110]}[name];
+    const duration={horn:.32,impact:.24,boost:.48,shift:.09,overrun:.12,ignition:.5,tick:.09,go:.26,checkpoint:.22,reward:.7,accept:.17,failed:.35}[name];if(!duration)return false;
     cooldowns.set(name,now+(name==='impact'?.65:name==='horn'?.4:name==='overrun'?.8:.15));
     const gain=ctx.createGain(),filter=ctx.createBiquadFilter(),voice=name==='boost'||name==='shift'||name==='overrun'?ctx.createBufferSource():ctx.createOscillator();
-    const level=Math.min(1,Math.max(.1,intensity))*({horn:.5,impact:.65,boost:.46,shift:.16,overrun:.2,ignition:.18}[name]);
+    const level=Math.min(1,Math.max(.1,intensity))*({horn:.5,impact:.65,boost:.46,shift:.16,overrun:.2,ignition:.18,tick:.14,go:.18,checkpoint:.14,reward:.2,accept:.13,failed:.14}[name]);
     gain.gain.setValueAtTime(.001,now);gain.gain.exponentialRampToValueAtTime(level,now+.015);gain.gain.exponentialRampToValueAtTime(.001,now+duration);
-    filter.type='lowpass';filter.frequency.setValueAtTime(name==='boost'?2800:name==='shift'?1600:name==='overrun'?650:1100,now);filter.frequency.exponentialRampToValueAtTime(180,now+duration);
-    if('buffer' in voice){voice.buffer=noise;voice.loop=true;}else{voice.type=name==='horn'?'sawtooth':'triangle';voice.frequency.setValueAtTime(name==='horn'?410:name==='impact'?110:65,now);voice.frequency.exponentialRampToValueAtTime(name==='horn'?390:name==='impact'?38:145,now+duration);}
+    filter.type='lowpass';filter.frequency.setValueAtTime(cue?2400:name==='boost'?2800:name==='shift'?1600:name==='overrun'?650:1100,now);filter.frequency.exponentialRampToValueAtTime(cue?1800:180,now+duration);
+    if('buffer' in voice){voice.buffer=noise;voice.loop=true;}else{voice.type=cue?'sine':name==='horn'?'sawtooth':'triangle';voice.frequency.setValueAtTime(cue?cue[0]:name==='horn'?410:name==='impact'?110:65,now);voice.frequency.exponentialRampToValueAtTime(cue?cue[1]:name==='horn'?390:name==='impact'?38:145,now+duration);}
     voice.connect(filter);filter.connect(gain);gain.connect(audio.master);effects.add(voice);voice.onended=()=>{effects.delete(voice);voice.disconnect();filter.disconnect();gain.disconnect();};voice.start(now);voice.stop(now+duration+.02);return true;
   };
   audio.start=async()=>{

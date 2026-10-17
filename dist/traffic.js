@@ -1,6 +1,6 @@
-import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=populated-8';
-import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=populated-8';
-import {vehicleSpec} from './vehicles.js?v=populated-8';
+import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=career-9';
+import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=career-9';
+import {vehicleSpec} from './vehicles.js?v=career-9';
 
 // A small, deterministic fleet follows continuous right-hand lanes. It runs on
 // the same fixed clock as the player, so pausing freezes cars and signals.
@@ -59,12 +59,22 @@ function forwardGap(car,other){
   if(along<=0||lateral>2.7)return Infinity;
   return along-5.8;
 }
-export function stepTraffic(traffic,world,player,dt){
+function collisionCourse(car,other){
+  const dx=other.x-car.x,dz=other.z-car.z;if(dx*dx+dz*dz>4900)return Infinity;
+  const heading=other.motionHeading??other.heading??0,speed=other.speed||0,vx=(other.tx??-Math.sin(heading))*speed-car.tx*car.speed,vz=(other.tz??-Math.cos(heading))*speed-car.tz*car.speed,v2=vx*vx+vz*vz;
+  if(v2<1)return Infinity;const t=-(dx*vx+dz*vz)/v2;
+  return t>.04&&t<2.2&&Math.hypot(dx+vx*t,dz+vz*t)<4.5?t:Infinity;
+}
+export function reactToHorn(traffic,player){
+  if(!traffic.enabled)return 0;let count=0;
+  for(const car of traffic.cars)if(Math.hypot(car.x-player.x,car.z-player.z)<34){car.alertUntil=traffic.time+1.5;count++;}return count;
+}
+export function stepTraffic(traffic,world,player,dt,pedestrians=[]){
   if(!traffic.enabled)return;
   traffic.time+=dt;
   const targets=traffic.targets||(traffic.targets=new Float64Array(traffic.cars.length));
   traffic.cars.forEach((car,index)=>{
-    const route=traffic.routes[car.route];let target=car.desiredSpeed;
+    const route=traffic.routes[car.route];let target=car.desiredSpeed;car.reaction='cruise';
     // Ease down before corners, rather than snapping a fast car around them.
     const ahead=route.frame(car.s+18),bend=Math.abs(Math.atan2(Math.sin(ahead.heading-car.heading),Math.cos(ahead.heading-car.heading)));
     target=Math.min(target,route.city&&bend>.18?6:target);
@@ -75,12 +85,15 @@ export function stepTraffic(traffic,world,player,dt){
           const distance=axis==='ns'?(cross-car.z)/car.tz:(cross-car.x)/car.tx;
           if(distance<18||distance>90)continue;
           const signal=signalState(traffic.time,axis),canStop=distance>24+car.speed*car.speed/(2*5);
-          if(signal==='red'||signal==='yellow'&&canStop)target=Math.min(target,Math.sqrt(2*4*Math.max(0,distance-24)));
+          if(signal==='red'||signal==='yellow'&&canStop){target=Math.min(target,Math.sqrt(2*4*Math.max(0,distance-24)));car.reaction='signal';}
         }
       }
     }
     for(const other of traffic.cars){if(!other||other===car)continue;const gap=forwardGap(car,other);if(gap<70)target=Math.min(target,Math.sqrt(2*4*Math.max(0,gap-2)),Math.max(0,((other.speed||0)+gap-5-car.speed*.65)));}
-    if(player){const gap=forwardGap(car,player);if(gap<70)target=Math.min(target,Math.sqrt(8*Math.max(0,gap-2)),Math.max(0,(player.speed||0)+gap-5-car.speed*.65));}
+    for(const other of traffic.cars){if(other===car||car.id<other.id||Math.abs(car.tx*other.tx+car.tz*other.tz)>.6)continue;const t=collisionCourse(car,other);if(Number.isFinite(t)){target=Math.min(target,Math.sqrt(8*Math.max(0,car.speed*t-7)));car.reaction='yielding';}}
+    if(player){const gap=forwardGap(car,player);if(gap<70)target=Math.min(target,Math.sqrt(8*Math.max(0,gap-2)),Math.max(0,(player.speed||0)+gap-5-car.speed*.65));const t=collisionCourse(car,player);if(Number.isFinite(t)){target=Math.min(target,Math.sqrt(8*Math.max(0,car.speed*t-7)));car.reaction='yielding';}}
+    for(const person of pedestrians){if(!person.crossingNow)continue;const gap=forwardGap(car,person);if(gap<45){target=Math.min(target,Math.sqrt(8*Math.max(0,gap-2)));car.reaction='pedestrian';}}
+    if(car.alertUntil>traffic.time){target=Math.min(target,car.desiredSpeed*.6);if(car.reaction==='cruise')car.reaction='horn';}
     if(car.blocked>0)target=0;
     targets[index]=Math.max(0,target);
   });

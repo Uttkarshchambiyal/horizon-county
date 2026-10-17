@@ -1,10 +1,11 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=populated-8';
-import {buildCity} from './city-view.js?v=populated-8';
-import {buildRegions} from './region-view.js?v=populated-8';
-import {streamStaticWorld} from './world-streaming.js?v=populated-8';
-import {surfaceDepthBias} from './render-quality.js?v=populated-8';
-import {buildPedestrians} from './pedestrians.js?v=populated-8';
+import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=career-9';
+import {buildCity} from './city-view.js?v=career-9';
+import {buildRegions} from './region-view.js?v=career-9';
+import {streamStaticWorld} from './world-streaming.js?v=career-9';
+import {surfaceDepthBias} from './render-quality.js?v=career-9';
+import {buildPedestrians} from './pedestrians.js?v=career-9';
+import {addGroundContact} from './lighting.js?v=career-9';
 
 export function buildOpenWorld(scene,world,{reversedDepth=false}={}){
   const group=new THREE.Group();scene.add(group);
@@ -142,7 +143,8 @@ float wave=sin(p.x*.13+p.z*.19+time)*sin(p.x*.024-p.z*.04+time*.4);float glint=p
   // Atmosphere uses a large gradient dome; distant terrain fades into the sky.
   const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,32,20),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,depthTest:false,uniforms:{top:{value:new THREE.Color(0x6da2c6)},bottom:{value:new THREE.Color(0xe1d9be)}},vertexShader:'varying float h;void main(){h=normalize(position).y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying float h;uniform vec3 top;uniform vec3 bottom;void main(){gl_FragColor=vec4(mix(bottom,top,pow(max(0.,h),.65)),1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));sky.renderOrder=-1000;sky.userData.alwaysVisible=true;group.add(sky);
   const sunDisk=new THREE.Mesh(new THREE.SphereGeometry(65,24,16),new THREE.MeshBasicMaterial({color:0xffe8b1}));sunDisk.userData.alwaysVisible=true;sunDisk.position.set(-1800,1600,-3500);group.add(sunDisk);
+  const groundContact=addGroundContact(group,world,reversedDepth);
   const visibility=streamStaticWorld(group);
-  const population=buildPedestrians(group,world);
+  const population=buildPedestrians(group,world,groundContact.material.map);
   return {group,visibility,population,city,regions,regionStats:regions.stats,cityStats:city.stats,surfaces:{asphalt,terrain:terrain.material,sizeX,sizeZ},setSky(top,bottom){sky.material.uniforms.top.value.set(top);sky.material.uniforms.bottom.value.set(bottom);waterMaterial.uniforms.sky.value.set(bottom);},update(time,camera){waterMaterial.uniforms.time.value=time;if(camera)sky.position.copy(camera.position);},stats:{buildings:world.buildings.length,roadKm:world.roads.reduce((s,r)=>s+r.length,0)/1000,palms:palms.length}};
 }

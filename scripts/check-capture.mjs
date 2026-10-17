@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {createPerformanceCapture,summarizeCapture} from '../dist/performance-capture.js';
+const capture=createPerformanceCapture(2);capture.start({quality:'auto',source:'synthetic test'});capture.sample({frameMs:9000});assert.equal(capture.elapsed,0,'The first resume interval must be excluded');
+for(let i=0;i<60;i++)capture.sample({frameMs:1000/60,cpuMs:3,renderMs:1,calls:160,triangles:400000,district:'DOWNTOWN',quality:'auto'});assert.ok(Math.abs(capture.elapsed-1)<.001);capture.interrupt();capture.sample({frameMs:30000});assert.ok(Math.abs(capture.elapsed-1)<.001,'Menu time must not enter the capture');
+let report;for(let i=0;i<61;i++)report=capture.sample({frameMs:1000/60,cpuMs:3,renderMs:1,calls:160,triangles:400000,district:'PACIFIC BEACH',quality:'performance'})||report;
+assert.ok(report);assert.equal(report.fps,60);assert.equal(report.p95,16.67);assert.equal(report.targetMet,true);assert.equal(report.cpuMs,3);assert.equal(capture.running,false);assert.equal(JSON.parse(capture.toJSON()).metadata.quality,'auto');
+assert.equal(report.configurations.length,2);assert.equal(report.byDistrict.DOWNTOWN.fps,60);assert.equal(report.byDistrict['PACIFIC BEACH'].fps,60);
+const samples=Array.from({length:100},()=>({frameMs:1000/60}));samples.push({frameMs:650});const stalled=summarizeCapture(samples);assert.ok(stalled.fps<44);assert.equal(stalled.max,650);assert.equal(stalled.stalls,1);assert.equal(stalled.hitches,1);assert.equal(stalled.targetMet,false);assert.ok(stalled.onePercentLow<4,'1% lows must include foreground stalls');
+assert.equal(summarizeCapture([]),null);capture.start({});capture.sample({frameMs:16});capture.sample({frameMs:NaN});assert.equal(capture.elapsed,0);capture.cancel();assert.equal(capture.running,false);assert.equal(capture.elapsed,0);
+console.log('PASS Performance capture: real interval accounting, paused/background continuity, all foreground stalls, P50/P95/P99, 1% lows, CPU submission metrics and JSON export (synthetic timing, not device FPS)');

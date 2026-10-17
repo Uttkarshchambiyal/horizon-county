@@ -1,5 +1,13 @@
 // Integration test for the real game entrypoint and input handlers. Rendering
 // and canvas pixels are stubbed; this does not replace visual browser QA.
+import {createActivities,createCareer} from '../dist/career.js';
+import {createRoutePlanner} from '../dist/navigation.js';
+import {createCareerUI} from '../dist/career-ui.js';
+import {buildActivityView} from '../dist/activity-view.js';
+import {createPerformanceCapture} from '../dist/performance-capture.js';
+import {createPerformanceUI} from '../dist/performance-ui.js';
+import {LIGHTING_MOODS} from '../dist/lighting.js';
+import {reactToHorn} from '../dist/traffic.js';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import * as THREE from '../dist/vendor/three.module.min.js';
@@ -31,8 +39,8 @@ globalThis.window={addEventListener:(name,fn)=>{if(!listeners.has(name))listener
 globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.devicePixelRatio=1;globalThis.innerWidth=1440;globalThis.innerHeight=900;
 let callback;globalThis.requestAnimationFrame=fn=>callback=fn;
 let renders=0;class Renderer{constructor(){this.shadowMap={};this.info={render:{}};}setPixelRatio(value){this.pixelRatio=value;}getPixelRatio(){return this.pixelRatio;}setSize(){}render(){renders++;}}
-const source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-const dependencies={renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias,animateVehicle,createEngineAudio,engineTelemetry,THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadSportsCar:async v=>{v.assetReady=true;return v;},loadWorldAssets:async()=>({loaded:3,total:3})};
+const source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'')+'\nwindow.__testCareer={career,performanceCapture};';
+const dependencies={createActivities,createCareer,createRoutePlanner,createCareerUI,buildActivityView,createPerformanceCapture,createPerformanceUI,LIGHTING_MOODS,reactToHorn,renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias,animateVehicle,createEngineAudio,engineTelemetry,THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,loadSportsCar:async v=>{v.assetReady=true;return v;},loadWorldAssets:async()=>({loaded:3,total:3})};
 new Function(...Object.keys(dependencies),source)(...Object.values(dependencies));
 await new Promise(resolve=>setImmediate(resolve));
 const key=(code,key,up=false)=>{for(const fn of listeners.get(up?'keyup':'keydown')||[])fn({code,key,preventDefault(){}});};
@@ -62,3 +70,11 @@ ids.get('traffic-toggle').listeners.click();assert.equal(window.horizon.getState
 key('KeyO','o');ids.get('traffic-toggle').listeners.click();key('Escape','Escape');frames(30);assert.ok(window.horizon.getState().trafficTime>stopped.trafficTime);
 console.log('PASS Garage: car switching stops the car; graphics/traffic settings; simulation freezes in overlays; no idle movement');
 console.log('PASS Real entrypoint: canvas focus, simultaneous W+A/W+D, steering HUD, map, waypoint, district travel, help, pause/resume and lighting');
+key('KeyJ','j');assert.equal(window.horizon.getState().mode,'jobs');const frozen=window.horizon.getState();frames(60);assert.equal(window.horizon.getState().elapsed,frozen.elapsed);assert.equal(window.horizon.getState().populationTime,frozen.populationTime);
+ids.get('activity-downtown-dispatch').listeners.click();assert.equal(window.horizon.getState().mode,'playing');assert.equal(window.horizon.getState().career.active.id,'downtown-dispatch');assert.ok(ids.get('objective-name').textContent.includes('Downtown'));assert.equal(ids.get('objective-card').classList.contains('is-active'),true);
+const location=window.horizon.getState();key('KeyM','m');document.querySelectorAll('[data-travel]')[0].listeners.click();assert.equal(window.horizon.getState().x,location.x,'An active run must block fast-travel teleports');key('Escape','Escape');key('KeyJ','j');ids.get('abandon-contract').listeners.click();assert.equal(window.horizon.getState().career.active,null);assert.equal(ids.get('activity-summary').classList.contains('hidden'),false);ids.get('close-jobs').listeners.click();
+// Seed earned credits only in this harness, then exercise the actual garage
+// purchase handler and resulting game-state tuning, not a copied UI function.
+window.__testCareer.career.profile.credits=1000;key('KeyG','g');document.querySelectorAll('[data-upgrade]')[0].listeners.click();assert.equal(window.horizon.getState().career.credits,550);assert.equal(window.horizon.getState().career.upgrades.engine,1);assert.equal(window.horizon.getState().tuning.acceleration,1.06);ids.get('use-car').listeners.click();
+key('KeyO','o');ids.get('start-benchmark').listeners.click();assert.equal(window.horizon.getState().mode,'playing');frames(90);assert.equal(window.horizon.getState().performanceCapture.running,true);const recorded=window.horizon.getState().performanceCapture.elapsed;key('KeyJ','j');frames(120);assert.equal(window.horizon.getState().performanceCapture.elapsed,recorded,'Opening a job board must pause benchmark accounting');key('Escape','Escape');frames(3600);assert.equal(window.horizon.getState().performanceCapture.running,false);assert.equal(window.horizon.getState().performanceCapture.report.fps,60);key('KeyO','o');assert.equal(ids.get('benchmark-results').classList.contains('hidden'),false);assert.ok(ids.get('benchmark-metrics').textContent.includes('P95'));key('Escape','Escape');
+console.log('PASS Entrypoint job board/HUD, pause and travel restrictions, garage upgrade purchase/physics wiring, 60-second capture and report UI (stub renderer, synthetic intervals)');

@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import {makeOpenWorld} from '../dist/world-data.js';
+import {createPedestrianMotion} from '../dist/pedestrian-motion.js';
+import {makeTraffic,stepTraffic,reactToHorn} from '../dist/traffic.js';
+import * as THREE from '../dist/vendor/three.module.min.js';
+import {buildOpenWorld} from '../dist/world-view.js';
+const ctx=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});globalThis.document={createElement:()=>({getContext:()=>ctx})};
+const world=makeOpenWorld(),motion=createPedestrianMotion(world),focus={x:0,z:340,heading:0,speed:0};motion.update(0,focus);
+buildOpenWorld(new THREE.Scene(),world);for(const p of motion.people.filter(p=>p.crossing))for(const t of[0,.25,.5,.75,1]){const x=p.x1+(p.x2-p.x1)*t,z=p.z1+(p.z2-p.z1)*t;assert.equal(world.resolve(x,z,0,.32,0).hit,false,'Crosswalk paths must clear all street scenery');assert.equal(world.surface(x,z).water,false);}
+const crossing=motion.people.find(p=>p.crossing&&p.x1<0&&Math.abs(p.z1-339)<1&&Math.abs(p.x1)<20);assert.ok(crossing);for(let t=.05;t<13;t+=.05)motion.update(t,focus,{trafficTime:t});assert.equal(crossing.crossingNow,false,'Walkers must wait while the traffic light is green');
+for(let t=13;t<16;t+=.05)motion.update(t,focus,{trafficTime:t});assert.equal(crossing.crossingNow,true);for(let t=16;t<31.8;t+=.05)motion.update(t,focus,{trafficTime:t});assert.equal(crossing.crossingNow,false,'A crossing must finish before the next green phase');assert.ok(crossing.progress===0||crossing.progress===1);
+const simple={life:{walkers:[{x1:0,z1:0,x2:0,z2:-20,speed:1,seed:0}]},surface:()=>({height:0,water:false}),resolve:(x,z)=>({x,z,hit:false})},ped=createPedestrianMotion(simple),car={x:0,z:12,speed:12,heading:0};ped.update(0,car);let lastPedTime=0;for(let t=.016;t<.8;t+=.016){lastPedTime=t;ped.update(t,car,{hornUntil:2});}const person=ped.people[0];assert.ok(person.alert>0);assert.ok(Math.hypot(person.offsetX,person.offsetZ)>.5,'A threatened pedestrian must step away');assert.ok(person.gesture>.1);const snapshot={x:person.x,z:person.z};assert.equal(ped.update(lastPedTime,car,{hornUntil:2}),false,'Frozen updates must not animate the crowd');
+for(let t=.8;t<8;t+=.016)ped.update(t,{x:50,z:50,speed:0},{hornUntil:0});assert.ok(Math.hypot(person.offsetX,person.offsetZ)<.05,'People must return smoothly to their path after danger passes');
+const heard=createPedestrianMotion(simple);heard.update(0,{x:15,z:0,speed:0});heard.update(.1,{x:15,z:0,speed:0},{hornUntil:1});assert.ok(heard.people[0].alert>0);assert.ok(Math.abs(heard.people[0].headTurn)>.1,'A safe nearby horn must get a look without requiring a collision');
+const traffic=makeTraffic(world);traffic.cars=[traffic.cars[0]];const c=traffic.cars[0],route=traffic.routes[c.route];let best=Infinity;for(let s=0;s<route.length;s+=1){const p=route.frame(s),d=Math.hypot(p.x-3.4,p.z-480);if(d<best){best=d;c.s=s;}}Object.assign(c,route.frame(c.s));c.speed=14;
+const player={x:c.x+15,z:c.z-20,heading:Math.PI/2,speed:10};stepTraffic(traffic,world,player,1/60);assert.equal(c.reaction,'yielding','Traffic must anticipate a crossing player');assert.equal(c.braking,true);
+const hornPlayer={x:c.x,z:c.z+5};assert.equal(reactToHorn(traffic,hornPlayer),1);assert.ok(c.alertUntil>traffic.time);traffic.enabled=false;assert.equal(reactToHorn(traffic,hornPlayer),0);
+traffic.enabled=true;c.speed=12;stepTraffic(traffic,world,null,1/60,[{x:c.x,z:c.z-14,crossingNow:true}]);assert.equal(c.reaction,'pedestrian');assert.equal(c.braking,true);
+console.log('PASS Pedestrian signal waiting, complete crossings, predicted-car avoidance, safe horn looks/gestures, recovery to paths and frozen animation; traffic predicts crossing conflicts and yields to people');

@@ -15,7 +15,7 @@ for(const block of world.blocks){
 for(const type of ['house','villa','loft','glass','round','setback','artdeco','apartment','motel','garage','retail','warehouse','civic'])assert.ok(types.has(type),'Missing architecture '+type);
 assert.ok(world.blocks.some(b=>b.use==='plaza'));assert.ok(world.blocks.some(b=>b.use==='service'));assert.ok(world.blocks.some(b=>b.use==='parking'));
 const plaza=world.landmarks.find(l=>l.name==='Horizon Plaza');assert.equal(world.resolve(plaza.x,plaza.z,0).hit,true,'The fountain must be solid');
-const context=new Proxy({createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});globalThis.document={createElement:()=>({getContext:()=>context})};
+const context=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});globalThis.document={createElement:()=>({getContext:()=>context})};
 const scene=new THREE.Scene(),city=buildCity(scene,world);assert.ok(city.stats.balconies>500);assert.ok(city.stats.streetTrees>800);assert.ok(city.stats.props>300);
 console.log(`PASS Dense neighbourhoods: ${world.buildings.length} buildings, ${types.size} architectures, 30 populated blocks, ${city.stats.balconies} balconies, ${city.stats.streetTrees} street trees; solid fountain and service fixtures`);
 const binary=fs.readFileSync(new URL('../dist/assets/cars/ferrari-458.glb',import.meta.url)),buffer=binary.buffer.slice(binary.byteOffset,binary.byteOffset+binary.byteLength),loader=new GLTFLoader(),gltf=await loader.parseAsync(buffer,'');

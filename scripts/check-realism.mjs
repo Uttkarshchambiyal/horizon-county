@@ -10,7 +10,7 @@ import {engineTelemetry} from '../dist/engine-audio.js';
 import {makeOpenWorld} from '../dist/world-data.js';
 import {createFacadeLibrary} from '../dist/facade-materials.js';
 const flat={spawns:[{x:0,z:0,heading:0}],surface:()=>({height:0,onRoad:true}),resolve:(x,z)=>({x,z,hit:false})},dt=1/120;
-const ctx=new Proxy({createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});globalThis.document={createElement:()=>({getContext:()=>ctx})};
+const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});globalThis.document={createElement:()=>({getContext:()=>ctx})};
 const data=fs.readFileSync(new URL('../dist/assets/cars/ferrari-458.glb',import.meta.url)),gltf=await new GLTFLoader().parseAsync(data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength),'');
 const car=createVehicle(new THREE.Group(),'clubsport');mountSportsCar(car,gltf);
 {

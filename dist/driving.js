@@ -1,5 +1,5 @@
-import {clamp} from './world-data.js?v=populated-8';
-import {vehicleSpec} from './vehicles.js?v=populated-8';
+import {clamp} from './world-data.js?v=career-9';
+import {vehicleSpec} from './vehicles.js?v=career-9';
 const angle=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function newDriveState(world,spawn=world.spawns[0],vehicleId='clubsport'){
@@ -9,22 +9,22 @@ export function newDriveState(world,spawn=world.spawns[0],vehicleId='clubsport')
 }
 export function recoverCar(state,world,spawn){
   const fresh=newDriveState(world,spawn||state.lastSafe,state.vehicleId);
-  Object.assign(state,fresh,{elapsed:state.elapsed,distance:state.distance,maxSpeed:state.maxSpeed});
+  Object.assign(state,fresh,{elapsed:state.elapsed,distance:state.distance,maxSpeed:state.maxSpeed,tuning:state.tuning});
 }
 export function stepDrive(state,world,input,dt){
-  const events=[],spec=vehicleSpec(state.vehicleId),oldSpeed=state.speed;state.elapsed+=dt;state.hitCooldown=Math.max(0,state.hitCooldown-dt);
+  const events=[],spec=vehicleSpec(state.vehicleId),tune=state.tuning||{},oldSpeed=state.speed;state.elapsed+=dt;state.hitCooldown=Math.max(0,state.hitCooldown-dt);
   const start=world.surface(state.x,state.z),gas=!!input.throttle,brake=!!input.brake,speed=Math.abs(state.speed);let supportGrade=0;
   const boost=gas&&!brake&&input.boost&&state.boost>1&&state.speed>6&&!start.water&&state.grounded;
-  state.boost=clamp(state.boost+(boost?-26:9)*dt,0,100);
-  const top=start.water?3:start.onRoad?(boost?spec.boostTop:spec.top):spec.offRoad;
-  const rolling=(start.onRoad?.72:1.7)+speed*speed*.00065,braking=start.onRoad?12.8:8.5;
+  state.boost=clamp(state.boost+(boost?-26:9*(tune.recharge??1))*dt,0,100);
+  const boostTop=spec.boostTop*(tune.boostSpeed??1),top=start.water?3:start.onRoad?(boost?boostTop:spec.top):spec.offRoad;
+  const rolling=(start.onRoad?.72:1.7)+speed*speed*.00065,braking=(start.onRoad?12.8:8.5)*(tune.braking??1);
   if(brake){
     if(state.speed>.08||gas){state.speed=approach(state.speed,0,braking*dt);state.reverseHold=0;}
     else {state.speed=Math.min(0,state.speed);state.reverseHold+=dt;if(state.reverseHold>.28)state.speed=Math.max(-9,state.speed-6.5*dt);}
   }else if(gas){
     state.reverseHold=0;
     if(state.speed<-.08)state.speed=approach(state.speed,0,braking*dt);
-    else {state.speed=Math.max(0,state.speed);const power=spec.accel*(1-.5*clamp(state.speed/top,0,1))*(boost?1.5:1);state.speed+=Math.max(0,power-rolling)*dt;}
+    else {state.speed=Math.max(0,state.speed);const power=spec.accel*(tune.acceleration??1)*(1-.5*clamp(state.speed/top,0,1))*(boost?1.5:1);state.speed+=Math.max(0,power-rolling)*dt;}
   }else {state.reverseHold=0;state.speed=approach(state.speed,0,rolling*dt);}
   if(input.drift)state.speed=approach(state.speed,0,7.5*dt);
   if(state.grounded&&(gas&&!brake||Math.abs(state.speed)>.15||brake&&state.reverseHold>.28)){
@@ -32,13 +32,13 @@ export function stepDrive(state,world,input,dt){
     supportGrade=clamp((front-back)/2.8,-.6,.6);state.speed-=9.81*supportGrade*dt;
   }
   if(state.speed>top)state.speed=approach(state.speed,top,18*dt);
-  state.speed=clamp(state.speed,-9,spec.boostTop);if(!gas&&!brake&&Math.abs(state.speed)<.08)state.speed=0;
+  state.speed=clamp(state.speed,-9,boostTop);if(!gas&&!brake&&Math.abs(state.speed)<.08)state.speed=0;
   state.maxSpeed=Math.max(state.maxSpeed,Math.abs(state.speed));
   // Predictable keyboard response, with visible steering kept separate from tire grip.
   const steer=clamp(input.steer||0,-1,1),steeringRate=steer===0?5.5:steer*state.steering<0?5:3.8;
   state.steering=approach(state.steering,steer,steeringRate*dt);
   const maxAngle=.56/(1+Math.abs(state.speed)/24);state.steerAngle=-state.steering*maxAngle;
-  const grip=start.onRoad?(state.vehicleId==='trail'?10.5:state.vehicleId==='touring'?13:15):state.vehicleId==='trail'?9:7;
+  const grip=(start.onRoad?(state.vehicleId==='trail'?10.5:state.vehicleId==='touring'?13:15):state.vehicleId==='trail'?9:7)*(tune.grip??1);
   const targetYaw=clamp(state.speed/spec.wheelbase*Math.tan(state.steerAngle)*(input.drift?1.1:1),-grip/Math.max(2,Math.abs(state.speed)),grip/Math.max(2,Math.abs(state.speed)));
   state.yawRate+=(targetYaw-state.yawRate)*(1-Math.exp(-(state.grounded?10:1.5)*dt));state.yawRate=clamp(state.yawRate,-grip/Math.max(2,Math.abs(state.speed)),grip/Math.max(2,Math.abs(state.speed)));
   if(Math.abs(state.speed)<.04)state.yawRate=0;

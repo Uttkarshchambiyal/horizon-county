@@ -10,7 +10,7 @@ export async function loadWorldAssets(scene,renderer,view){
   };
   const road=async()=>{
     const maps=await Promise.all([texture('asphalt_02_diff_1k.jpg',[3,3],true),texture('asphalt_02_nor_gl_1k.jpg',[3,3]),texture('asphalt_02_rough_1k.jpg',[3,3])]);
-    const m=view.surfaces.asphalt;m.map.dispose();[m.map,m.normalMap,m.roughnessMap]=maps;m.color.set(0xffffff);m.normalScale.set(.22,.22);m.needsUpdate=true;
+    const m=view.surfaces.asphalt;m.map.dispose();[m.map,m.normalMap,m.roughnessMap]=maps;m.color.set(0xf0f0ed);m.normalScale.set(.15,.15);m.roughness=.88;m.needsUpdate=true;
   };
   const ground=async()=>{
     const repeat=[view.surfaces.sizeX/8,view.surfaces.sizeZ/8],maps=await Promise.all([texture('brown_mud_leaves_01_diff_1k.jpg',repeat,true),texture('brown_mud_leaves_01_nor_gl_1k.jpg',repeat)]);

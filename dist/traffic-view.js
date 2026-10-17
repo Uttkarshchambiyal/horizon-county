@@ -1,8 +1,8 @@
 import * as THREE from './vendor/three.module.min.js';
-import {fleetModel,fleetProxy,FLEET_TYPES} from './traffic-models.js?v=populated-8';
-import {signalState} from './traffic.js?v=populated-8';
-import {terrainHeight} from './world-data.js?v=populated-8';
-import {enableInstanceFade,distanceFade} from './render-quality.js?v=populated-8';
+import {fleetModel,fleetProxy,FLEET_TYPES} from './traffic-models.js?v=career-9';
+import {signalState} from './traffic.js?v=career-9';
+import {terrainHeight} from './world-data.js?v=career-9';
+import {enableInstanceFade,distanceFade} from './render-quality.js?v=career-9';
 
 export function buildTrafficView(scene,world,traffic){
   const group=new THREE.Group();group.name='Local animated traffic fleet';scene.add(group);
@@ -51,7 +51,7 @@ export function buildTrafficView(scene,world,traffic){
         part.fade.array[index*4+i]=fade;wheel.position.set(...p);wheel.rotation.set(-(c.parked?0:c.s)/model.spec.radius,i<2?c.renderSteering||0:0,0,'YXZ');wheel.updateMatrix();wheelMatrix.multiplyMatrices(object.matrix,wheel.matrix);part.mesh.setMatrixAt(index*4+i,wheelMatrix);
       });
       if(part.paint)part.mesh.setColorAt(index,color.set(c.paint));
-      if(part.tail)part.mesh.setColorAt(index,color.set(!c.parked&&c.braking?0xff4942:night?0xc92420:0x651b1b));
+      if(part.tail)part.mesh.setColorAt(index,color.set(c.alertUntil>traffic.time&&Math.floor(traffic.time*6)%2?0xffbe45:!c.parked&&c.braking?0xff4942:night?0xc92420:0x651b1b));
     }
   }
   function update(alpha=1,player){
