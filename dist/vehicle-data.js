@@ -1,4 +1,4 @@
-import {REAL_CAR_SPECS} from './real-car-specs.js?v=high-speed-steering-12';
+import {REAL_CAR_SPECS} from './real-car-specs.js?v=launch-beta-13';
 // Driving figures are balanced arcade tuning, not manufacturer performance data.
 const catalogue=[
   {id:'clubsport',name:'Ferrari 458 Italia',className:'ITALIAN SPORTS CAR',description:'Mid-engine V8 character, sculpted bodywork and five-spoke wheels.',color:0xcb2527,top:58,boostTop:77,accel:9.5,offRoad:25,grip:15,voice:1,source:'ferrari-458',author:'vicent091036',model:'57bf6cc56931426e87494f554df1dab6'},
@@ -11,5 +11,5 @@ const catalogue=[
   {id:'corolla',name:'Toyota Corolla KE80',className:'EVERYDAY CLASSIC',description:'A relaxed compact sedan with a boxy silhouette and modest power.',color:0xc6c9bf,top:40,boostTop:55,accel:6.5,offRoad:31,grip:12,voice:.81,source:'toyota-corolla',author:'PHAC',model:'2b30faa611e64177a94a69098d27d1fb'},
   {id:'urus',name:'Lamborghini Urus',className:'ITALIAN PERFORMANCE SUV',description:'A bold factory-yellow SUV with large alloys and an athletic stance.',color:0xf1c42d,top:52,boostTop:68,accel:8.7,offRoad:37,grip:11.5,voice:.78,suv:true,paintable:false,source:'lamborghini-urus',author:'Kai Xiang',model:'32964087f5d24c3e90482724ddfc2fef'}
 ];
-export const VEHICLES=catalogue.map(v=>({...v,...REAL_CAR_SPECS[v.id],track:REAL_CAR_SPECS[v.id].wheels[1][0]-REAL_CAR_SPECS[v.id].wheels[0][0],brake:32,thumbnail:'./assets/cars/'+v.source+'.jpg',file:'./assets/cars/'+v.source+(v.id==='clubsport'?'':'-drive')+'.glb'}));
+export const VEHICLES=catalogue.map(v=>({...v,...REAL_CAR_SPECS[v.id],track:REAL_CAR_SPECS[v.id].wheels[1][0]-REAL_CAR_SPECS[v.id].wheels[0][0],brake:32,thumbnail:'./assets/cars/'+v.source+'.jpg',file:'./assets/cars/'+v.source+(v.id==='clubsport'?'':'-drive')+'.glb'+(v.id==='clubsport'?'?v=panel-repair-13':'')}));
 export const vehicleSpec=id=>VEHICLES.find(v=>v.id===id)||VEHICLES[0];

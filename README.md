@@ -28,7 +28,7 @@ Open http://127.0.0.1:4173, choose a starting district, then select **Start Driv
 
 The city contains 489 buildings across 13 architectural types with 24 facade atlases. Brick, plaster and concrete photographs provide surface detail; four floors/bays per atlas vary frames, blinds, colour, weathering and night lighting. Separate roughness and relief masks keep window glass smoother than masonry. The city has 13 architectural types and 30 populated blocks. Street frontage includes balconies, brick lofts with fire escapes, Art Deco buildings, glass and round towers, motels, shops, warehouses, parking garages, houses and villas. Parks, a fountain plaza, parking lots, a service station, 989 street trees and bus shelters occupy the gaps. Another 515 storefront/garden details add cafe terraces, planters and bike racks at building entrances. The plaza fountain and fuel-station fixtures are solid. The coast has scattered hillside villas and low-rise hotels. Five beach recreation areas group umbrellas, loungers, towels, lifeguard towers, surfboards, surf-club kiosks, showers and volleyball courts. Four signed mountain viewpoints have gravel turnouts and footpaths; two have camping areas. Trees and rock outcrops stay beyond road shoulders and away from recreation areas. The hills have 830 regional pines and 130 birches, including denser groves along the pass, and textured two-cluster inland crowns. Rendered palms and city/inland trunks register matching collision shapes; vegetation placement also clears the full runway width. Gravel follows the terrain. Parked cars have marked bays. Major structures use oriented footprints, while rocks, tree trunks and fountains have circular collision shapes to avoid invisible square corners. Photographed sand and rock are blended into the ground by position/elevation. Pacific Beach now starts on the coast highway with the shore alongside.
 
-Traffic contains 12 city cars and 6 highway cars. Cars follow rounded right-hand lanes in both directions, slow for corners and vehicles ahead, obey alternating junction signals, and brake for the player. All simulation stops in pause, map, help, garage, jobs and settings panels. A small fleet is used intentionally. The fleet has six original silhouettes: hatchback, sedan, SUV, sports coupe, pickup and panel van. Each has different proportions, glazing, trim and wheelbase. Tires roll and front wheels steer through bends. Moving and parked cars use 48 close-detail material batches plus six cheaper silhouette batches. Full detail blends into the cheaper model over 120–160 m; moving vehicles remain visible to 420 m and parked vehicles to 220 m. Unchanged parked matrices remain cached. Signal colours update only when their phase changes. The main player vehicle has distance-driven tire rolling, Ackermann front-wheel angles, non-rotating brake assemblies, brake lights and subtle suspension movement. A/D steers the wheels at rest; the body only turns while moving. Wheelbase and visible steering request a yaw rate that is limited by tire grip, with a short response time and quick self-centering. This keeps keyboard steering clear without allowing unlimited lateral acceleration. Coasting uses rolling/aerodynamic resistance instead of heavy automatic braking. S brakes first, pauses 0.28 seconds at rest, then selects reverse; reverse is capped at 9 m/s. Slopes affect speed, road crests allow small gravity-driven flights, and landing restores grounded movement. Static contacts remove velocity into the obstacle while keeping tangential sliding. Asphalt, pavement and courtyard driving heights match their visible surfaces; moving and parked wheel heights also match the road and parking pads. Traffic uses oriented vehicle footprints from the shared fleet dimensions, with similar sliding and height separation.
+Traffic contains 12 city cars and 6 highway cars. Cars follow rounded right-hand lanes in both directions, slow for corners and vehicles ahead, obey alternating junction signals, and brake for the player. All simulation stops in pause, map, help, garage, jobs and settings panels. A small fleet is used intentionally. Moving and parked traffic use eight credited real-car profiles with different proportions, glazing, trim and wheelbases. Tires roll and front wheels steer through bends. Moving and parked cars use 39 material batches with cheaper meshes in the distance. Full detail blends into the cheaper model over 120–160 m; moving vehicles remain visible to 420 m and parked vehicles to 220 m. Unchanged parked matrices remain cached. Signal colours update only when their phase changes. The main player vehicle has distance-driven tire rolling, Ackermann front-wheel angles, non-rotating brake assemblies, brake lights and subtle suspension movement. A/D steers the wheels at rest; the body only turns while moving. Wheelbase and visible steering request a yaw rate that is limited by tire grip, with a short response time and quick self-centering. This keeps keyboard steering clear without allowing unlimited lateral acceleration. Coasting uses rolling/aerodynamic resistance instead of heavy automatic braking. S brakes first, pauses 0.28 seconds at rest, then selects reverse; reverse is capped at 9 m/s. Slopes affect speed, road crests allow small gravity-driven flights, and landing restores grounded movement. Static contacts remove velocity into the obstacle while keeping tangential sliding. Asphalt, pavement and courtyard driving heights match their visible surfaces; moving and parked wheel heights also match the road and parking pads. Traffic uses oriented vehicle footprints from the shared fleet dimensions, with similar sliding and height separation.
 
 The population update adds 441 grouped neighbourhood, waterfront, airport and landscape details. All 30 block interiors now have activities or planting: courts, playgrounds, market stalls, garden beds, pergolas, bike shelters and service details. There are 214 parked cars in total (136 additional marked curb/lot spaces), while the moving fleet remains at 18. Two existing coastal vehicles start within sight of the beach approach. Curb bays reject crossing lanes. A pool of 618 pedestrian paths covers sidewalks, the coastal promenade, markets, pergolas and marina; only nearby people are drawn, using three instanced batches for bodies, heads and soft foot contacts. Eight additional crosswalk walkers bring the pool to 626. Crosswalk walkers wait for a sufficiently long red phase and use separate walking lanes. Nearby people turn their heads toward horns, gesture and take validated steps away from a predicted car approach, then return to their routes. Traffic anticipates crossing-player conflicts, yields to people still crossing and slows with a brief hazard-lamp response to a nearby horn. Their walking clock pauses with the driving simulation. Pedestrian impact gameplay is not implemented.
 
@@ -45,9 +45,9 @@ npm test
 
 The checks exercise the real game entrypoint with a stub renderer, including keyboard input, steering HUD, map, waypoint, district travel, help, pause/resume, lighting, garage, graphics settings, traffic toggle and canvas focus. A three-minute mixed traffic simulation checks all 18 vehicles stay on roads, clear static scenery and maintain separation, while the idle player remains stationary. Dedicated cases verify red/green stops, following, player braking, disabled collisions and car selection/recovery. Simulation checks drive the central avenue, Marina Drive, the complete 9.3 km coastal loop and 3.2 km hill pass without collisions or road gaps, using lower speeds for tight hairpins. They verify safe spawns, no automatic movement, W+A/W+D steering, solid buildings, water recovery, matching road/terrain heights and upward road faces. The legacy stunt-track and keyboard regression checks also run.
 
-New checks verify wheel-first stationary steering, inside/outside wheel geometry, rear alignment, rolling distance, fixed brake assemblies, yaw/wheelbase consistency, reverse steering, engine RPM/gear changes, facade variants and regional road clearance. The actual Ferrari GLB is parsed in tests: 100,199 triangles plus a 242-triangle coupe roof/rear-glass addition, four live rolling wheels, two steering pivots, correct ground alignment, shared paint/brake materials and attribution metadata. The expanded GLB loads locally without a runtime Draco decoder. It was simplified offline from 358,788 triangles / 15.2 MB to 100,199 triangles / 4.1 MB using meshoptimizer v1.0; nodes, UVs, normals and wheel assemblies are retained. Normals influence the simplification, with a 0.006 relative error cap. It remains a self-contained asset; the loading screen reports progress and a fallback made from the same real-car geometry remains visible if the detailed download fails. Reselect the car to retry.
+New checks verify wheel-first stationary steering, inside/outside wheel geometry, rear alignment, rolling distance, fixed brake assemblies, yaw/wheelbase consistency, reverse steering, engine RPM/gear changes, facade variants and regional road clearance. The Ferrari GLB is parsed in tests for working wheel pivots, preserved exterior geometry, ground alignment, materials and attribution. It loads locally without a runtime Draco decoder. The current exterior-preserving preparation and counts are documented in the launch-beta section below. It remains a self-contained asset; the loading screen reports progress and a fallback made from the same real-car geometry remains visible if the detailed download fails. Reselect the car to retry.
 
-Static objects use a 240 m spatial index. Full nearby foliage and columns blend into simpler distant geometry; smaller street details have shorter visibility ranges while large architecture keeps its skyline range. Conservative camera-frustum culling omits instances behind the camera, with a 35 m margin for quick turns. Visibility buffers refresh after 8 m of travel, a camera turn, or an explicit spawn/quality change. Uploads cover only active buffer ranges, and bounding spheres are reused. Terrain remains tiled and cheap road/facade geometry remains merged by material. The actual 100,441-triangle player car retains its existing model, working wheels and material detail.
+Static objects use a 240 m spatial index. Full nearby foliage and columns blend into simpler distant geometry; smaller street details have shorter visibility ranges while large architecture keeps its skyline range. Conservative camera-frustum culling omits instances behind the camera, with a 35 m margin for quick turns. Visibility buffers refresh after 8 m of travel, a camera turn, or an explicit spawn/quality change. Uploads cover only active buffer ranges, and bounding spheres are reused. Terrain remains tiled and cheap road/facade geometry remains merged by material. The current player car remains below the existing 120,000-triangle model budget, with working wheels and material detail.
 
 Parked traffic occupies cached prefixes in the close and distant fleet batches. Ordinary frames only update and upload nearby moving vehicles. Parked transforms are rebuilt after 8 m of movement or a night-lighting change. Traffic simulation reuses following targets and previous poses instead of allocating new arrays and objects every physics tick. Signal lamps use small circular faces instead of hundreds of tiny spheres. Road colour textures retain up to 8x anisotropic filtering; normal/roughness masks use up to 2x. Shaders are precompiled after local assets finish loading and before the loading screen closes. Driving remains a fixed 120 Hz simulation with interpolated rendering. Menus render at 15 Hz; paused/map/help/settings screens stop continuous scene rendering, and hidden tabs skip rendering.
 
@@ -143,60 +143,64 @@ Urus and Skyline, steering pivots, and the BMW distant mesh were inspected.
 Further GPU checks, physical phone input and a sustained 60 FPS driving capture
 are not established by the isolated model viewer or automated tests.
 
-## Axle steering and wheel finish
+## Current launch beta: steering, wheels and replay goals
 
-Normal driving now integrates a rear-axle bicycle model using each model's
-measured wheelbase and axle offsets. The front axle sweeps into a turn while
-the rear axle follows its own tighter arc; there is no independently filtered
-travel heading that can slide the body away from the tire direction. Left and
-right front tires use Ackermann angles with one instantaneous turning centre.
-Keyboard rack response is smoothed, and the actual rack angle is limited by
-speed, road grip and tire upgrades. That same angle drives physics and visible
-steering. Steering airborne tires does not add a ground-contact yaw force.
-Road handling adds a smooth game-tuned cornering allowance above 72 km/h,
-reaching at most 60% extra allowance at 198 km/h. This prevents the previous
-inverse-square steering clamp from leaving A/D ineffective at high speed.
-High-speed keyboard engagement, opposite-lock response and self-centering are
-quicker; low-speed turning and off-road grip keep their existing limits.
-This allowance is arcade balancing, not measured manufacturer tire/downforce
-data. The car and visible wheels still share one bounded axle trajectory.
-This remains a browser kinematic/arcade model, not a complete tire-force or
-suspension simulator. Background: [MathWorks Ackermann and bicycle kinematics](https://www.mathworks.com/help/robotics/ug/mobile-robot-kinematics-equations.html).
+High-speed control uses a speed-sensitive tire response. Below 72 km/h the
+previous low-speed steering geometry remains intact. Above that, the road
+cornering allowance rises smoothly to 2.5 times each car's base arcade grip
+at 144 km/h. This is gameplay tuning, not measured manufacturer performance.
+The visible front rack retains up to about eight degrees at motorway speeds,
+with Ackermann inside/outside angles. Tire compliance limits the resulting
+axle curvature instead of almost locking the front wheels straight. Low-speed
+wheel and path angles match; high-speed tire slip can make them differ.
 
-Each wheel accumulates its own signed travel from its contact-centre motion.
-Changing the steering angle no longer rescales all previously travelled
-kilometres into a different wheel-spin phase. Rendered spin uses the proper
-wheel radius, wraps only its visible phase, interpolates between physics
-steps, and reverses with the car. Traffic uses its actual route curvature,
-independent inside/outside steering angles and four rolling histories too.
+There is no separate travel-heading filter. The rear axle follows its integrated
+arc, the front axle leads the turn, and yaw changes with the driver's rack
+request. Keyboard engagement/reversal/self-centering are faster at speed.
+Sustained steering beyond 45% input scrubs speed progressively when tire slip
+is present, capped at 6 m/s² of additional deceleration. Small course corrections
+keep normal coasting/acceleration. Airborne tires cannot add a ground yaw force.
+A one-second coasting Ferrari test starting at 160 km/h turns about 48 degrees,
+compared with about 27 degrees in the previous release; speed falls to about
+141 km/h during that full-input turn. This is a deterministic flat-road test,
+not a hardware or real-world vehicle benchmark.
 
-Player wheels retain their authored rim centres/spokes. Fragile source rubber
-and outer fragments are replaced by round, grounded annular rubber shells,
-with subdued tread bump and roughness. A radial rim blend reduces the visible
-spoke strobing at road speed; this is a lightweight visual approximation.
-Its opacity is capped at 52% so source spokes remain visible while rotating,
-instead of becoming an almost opaque, apparently stationary disc at speed.
-Traffic gets concentric round tires, rim lips, hubs and model-specific spoke
-counts in its existing one-batch wheel geometry. Preparation JSON describes
-the original baked assets; these wheel changes happen at runtime. Original
-GLB files and creator credits are retained.
+Each tire retains its own signed rolling history and render interpolation.
+Player tires use round rubber shells and subtle tread; speed blend opacity
+is capped at 52% to preserve visible rotating rim detail. The Ferrari now keeps
+the original full-resolution exterior paint panels, glass and source rims.
+Hidden cabin/chrome detail and source rubber/brakes are omitted from the offline
+asset. A lightweight cabin, round rubber and non-rolling brake discs/calipers
+replace them. This avoids the damaged panels caused by simplifying thin exterior
+surfaces. The shipping Ferrari GLB contains 117,007 triangles / about 4.2 MB;
+the runtime mounted model traverses 112,757 triangles after wheel trimming and
+additions, below the existing 120,000-triangle player budget. Creator credits
+and provenance remain intact.
 
-`check-axle-steering.mjs` tests all nine cars' rear contact-path alignment,
-front-first displacement, fixed wheelbase, common Ackermann turn centre,
-individual rolling distances, zero spin during stationary steering, high-speed
-grip in both directions, airborne steering and integration step consistency.
-It also requires useful heading changes at 160 km/h and near each car's boost
-top speed, reversal within 200 ms, centering, visible rim detail, and bounded
-road/off-road forces with stock and upgraded tires for all nine profiles.
-The existing real entrypoint, three-minute traffic, all-six-activity, world,
-collision, audio and source-model regressions also pass. Comet inspection used
-an isolated test scene for stationary steering, a low-speed left turn and a
-160 km/h right turn with actual physics and wheel metrics. Native W acceleration
-followed by physical KeyA and KeyD input produced the correct opposite
-inside/outside rolling histories. It is not a full-map
-FPS benchmark or proof of full simulator fidelity.
-High-speed follow-up inspection in Comet verified a right turn near 160 km/h,
-then physical KeyA/KeyD input from 160/240 km/h starting speeds. The correct
-outer wheels accumulated longer distances, the body followed the turn and
-the wheels centered after release. The speed blend left the authored spokes
-visible. These isolated checks do not measure full-map FPS.
+Today's Drive rotates across the six existing events at midnight UTC. Completing
+that day's featured event awards an extra $300 once per browser profile. The
+accepted UTC day follows a run across midnight; failure/abandonment never claims
+the bonus. Claims survive reload. Gold, silver and bronze medals derive from
+saved personal bests: gold at 90% of the event time limit, silver at 97%, bronze
+for a completed run. There is no online leaderboard or server validation.
+Successful runs expose a copyable result/link, with manual text-copy fallback.
+
+An optional first-drive guide checks real acceleration, turning and braking.
+It can be dismissed or replayed from Help. No automatic driving is added.
+Overlay keyboard focus wraps within the open dialog. Optional asset loading
+has a 15-second startup deadline, car downloads time out and retain a visible
+fallback, and startup failures offer reload instructions. Metadata and credits
+identify this release as a public beta. Progress remains in this browser;
+clearing site data removes it.
+
+`npm run check` and `npm test` cover all nine cars, visible high-speed steering,
+useful one-second course changes, reversal within 200 ms, low-speed geometry,
+small-correction coasting, tight-turn scrub, force bounds, daily rewards across
+reload/midnight, medal thresholds, legacy saves, guide progression, copy text,
+focus wrapping, asset timeout and startup recovery. Existing activities, traffic,
+world, audio and entrypoint checks remain in the suite. These are automated
+geometry/simulation/UI-harness checks; physical phone controls and sustained
+full-map hardware FPS remain separate verification limits.
+
+Release preparation and the editable Medium draft are in `docs/LAUNCH.md` and
+`docs/MEDIUM_DRAFT.md`. The Medium article has not been posted.

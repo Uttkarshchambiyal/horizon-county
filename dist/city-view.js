@@ -1,7 +1,7 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight,seeded} from './world-data.js?v=high-speed-steering-12';
-import {createFacadeLibrary} from './facade-materials.js?v=high-speed-steering-12';
-import {drawDistrictLife} from './district-life.js?v=high-speed-steering-12';
+import {terrainHeight,seeded} from './world-data.js?v=launch-beta-13';
+import {createFacadeLibrary} from './facade-materials.js?v=launch-beta-13';
+import {drawDistrictLife} from './district-life.js?v=launch-beta-13';
 
 // Street-front architecture has separate silhouettes and human-scale floors.
 // Static faces are merged by material; repeated trim and furniture is instanced.

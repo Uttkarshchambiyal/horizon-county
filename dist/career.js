@@ -1,6 +1,14 @@
-import {VEHICLES} from './vehicle-data.js?v=high-speed-steering-12';
+import {VEHICLES} from './vehicle-data.js?v=launch-beta-13';
 const SAVE_KEY='horizon-career-v1';
 const VEHICLE_IDS=VEHICLES.map(v=>v.id);
+export const DAILY_BONUS=300;
+export function dailyDrive(activities,now=Date.now()){
+  const day=Math.floor(now/86400000),activity=activities[((day%activities.length)+activities.length)%activities.length];
+  return {day:new Date(day*86400000).toISOString().slice(0,10),activity};
+}
+export function eventMedal(activity,time){
+  return !Number.isFinite(time)||time<=0||time>activity.limit?null:time<=activity.limit*.9?'gold':time<=activity.limit*.97?'silver':'bronze';
+}
 export const UPGRADES=[
   {id:'engine',name:'Engine tune',description:'+6% acceleration per level',costs:[450,950,1700]},
   {id:'brakes',name:'Brake kit',description:'+10% stopping force per level',costs:[350,750,1350]},
@@ -29,14 +37,15 @@ function segmentDistance(p,a,b){
   const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz||1)));
   return Math.hypot(p.x-a.x-dx*t,p.z-a.z-dz*t);
 }
-export function createCareer(activities,storage){
-  const profile={version:1,credits:0,earned:0,deliveries:0,races:0,bests:{},completed:[],upgrades:{}};
+export function createCareer(activities,storage,{now=Date.now}={}){
+  const profile={version:1,credits:0,earned:0,deliveries:0,races:0,bests:{},completed:[],upgrades:{},dailyClaims:[]};
   let active=null,result=null,events=[],lastPosition=null,saveAvailable=!!storage;
   try{
     const raw=JSON.parse(storage?.getItem(SAVE_KEY)||'null');
     if(raw?.version===1){
       for(const k of['credits','earned','deliveries','races'])profile[k]=integer(raw[k]);
       profile.completed=activities.filter(a=>raw.completed?.includes(a.id)).map(a=>a.id);
+      profile.dailyClaims=Array.isArray(raw.dailyClaims)?[...new Set(raw.dailyClaims.filter(day=>typeof day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(day)))].sort().slice(-60):[];
       for(const a of activities)if(Number.isFinite(raw.bests?.[a.id])&&raw.bests[a.id]>0)profile.bests[a.id]=Math.min(86400,raw.bests[a.id]);
       for(const id of VEHICLE_IDS){profile.upgrades[id]={};for(const u of UPGRADES)profile.upgrades[id][u.id]=integer(raw.upgrades?.[id]?.[u.id],3);}
     }
@@ -46,15 +55,17 @@ export function createCareer(activities,storage){
     if(!active)return;
     const a=active,definition=a.definition,previous=profile.bests[definition.id],cleanBonus=success&&definition.kind==='delivery'&&a.incidents===0?100:0;
     const timeBonus=success?Math.min(150,Math.floor(Math.max(0,definition.limit-a.elapsed)/3)*5):0;
-    const reward=success?definition.reward+cleanBonus+timeBonus:0;
-    result={id:definition.id,name:definition.name,kind:definition.kind,success,reason,elapsed:a.elapsed,reward,base:success?definition.reward:0,cleanBonus,timeBonus,newBest:success&&(!previous||a.elapsed<previous),incidents:a.incidents};
-    if(success){profile.credits+=reward;profile.earned+=reward;profile[definition.kind==='delivery'?'deliveries':'races']++;if(!profile.completed.includes(definition.id))profile.completed.push(definition.id);if(result.newBest)profile.bests[definition.id]=a.elapsed;save();}
+    const dailyBonus=success&&a.dailyDay&&!profile.dailyClaims.includes(a.dailyDay)?DAILY_BONUS:0;
+    const reward=success?definition.reward+cleanBonus+timeBonus+dailyBonus:0;
+    result={id:definition.id,name:definition.name,kind:definition.kind,success,reason,elapsed:a.elapsed,reward,base:success?definition.reward:0,cleanBonus,timeBonus,dailyBonus,medal:success?eventMedal(definition,a.elapsed):null,newBest:success&&(!previous||a.elapsed<previous),incidents:a.incidents};
+    if(success){if(dailyBonus){profile.dailyClaims.push(a.dailyDay);profile.dailyClaims.sort();profile.dailyClaims=profile.dailyClaims.slice(-60);}profile.credits+=reward;profile.earned+=reward;profile[definition.kind==='delivery'?'deliveries':'races']++;if(!profile.completed.includes(definition.id))profile.completed.push(definition.id);if(result.newBest)profile.bests[definition.id]=a.elapsed;save();}
     active=null;lastPosition=null;events.push({type:success?'complete':'failed',...result});return result;
   }
   const api={profile,get active(){return active;},get result(){return result;},get saveAvailable(){return saveAvailable;},
+    featured(){const daily=dailyDrive(activities,now());return {...daily,claimed:profile.dailyClaims.includes(daily.day),bonus:DAILY_BONUS};},
     start(id){
       const definition=activities.find(a=>a.id===id);if(!definition||active)return false;
-      active={definition,phase:'approach',elapsed:0,hold:0,countdown:3,gate:0,incidents:0};result=null;lastPosition=null;events.push({type:'accepted',name:definition.name});return true;
+      const daily=api.featured();active={definition,phase:'approach',elapsed:0,hold:0,countdown:3,gate:0,incidents:0,dailyDay:daily.activity.id===id?daily.day:null};result=null;lastPosition=null;events.push({type:'accepted',name:definition.name});return true;
     },
     target(){if(!active)return null;const a=active,d=a.definition;return d.kind==='delivery'?(a.phase==='delivery'?d.drop:d.pickup):(a.phase==='race'?d.gates[a.gate]:d.start);},
     update(dt,player){

@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
 
-import {createVehicle,createGarageLoader} from './vehicles.js?v=high-speed-steering-12';
+import {createVehicle,createGarageLoader} from './vehicles.js?v=launch-beta-13';
 export function createCar(scene){const vehicle=createVehicle(scene,'clubsport');createGarageLoader([vehicle]).select(vehicle).catch(()=>{});return vehicle;}
 
 export function addReflections(scene,renderer) {

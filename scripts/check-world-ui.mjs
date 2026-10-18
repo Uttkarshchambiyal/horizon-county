@@ -3,6 +3,7 @@
 import {createActivities,createCareer} from '../dist/career.js';
 import {createRoutePlanner} from '../dist/navigation.js';
 import {createCareerUI} from '../dist/career-ui.js';
+import {createFirstDrive,trapDialogTab,waitForStartup} from '../dist/first-drive.js';
 import {buildActivityView} from '../dist/activity-view.js';
 import {createPerformanceCapture} from '../dist/performance-capture.js';
 import {createPerformanceUI} from '../dist/performance-ui.js';
@@ -40,7 +41,7 @@ globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.devicePixelRat
 let callback;globalThis.requestAnimationFrame=fn=>callback=fn;
 let renders=0;class Renderer{constructor(){this.shadowMap={};this.info={render:{}};}setPixelRatio(value){this.pixelRatio=value;}getPixelRatio(){return this.pixelRatio;}setSize(){}render(){renders++;}}
 const source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'')+'\nwindow.__testCareer={career,performanceCapture};';
-const dependencies={createActivities,createCareer,createRoutePlanner,createCareerUI,buildActivityView,createPerformanceCapture,createPerformanceUI,LIGHTING_MOODS,reactToHorn,renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias,animateVehicle,createEngineAudio,engineTelemetry,THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,createGarageLoader:()=>({resident:[],select:async v=>{v.assetReady=true;v.assetStatus='ready';v.assetLevel='detailed';return v;}}),loadWorldAssets:async()=>({loaded:3,total:3})};
+const dependencies={createFirstDrive,trapDialogTab,waitForStartup,createActivities,createCareer,createRoutePlanner,createCareerUI,buildActivityView,createPerformanceCapture,createPerformanceUI,LIGHTING_MOODS,reactToHorn,renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias,animateVehicle,createEngineAudio,engineTelemetry,THREE:{...THREE,WebGLRenderer:Renderer},addReflections:()=>{},createDrivingControls,makeOpenWorld,terrainHeight,coast,clamp,buildOpenWorld,newDriveState,stepDrive,recoverCar,VEHICLES,vehicleSpec,createVehicle,makeTraffic,stepTraffic,collideTraffic,buildTrafficView,createGarageLoader:()=>({resident:[],select:async v=>{v.assetReady=true;v.assetStatus='ready';v.assetLevel='detailed';return v;}}),loadWorldAssets:async()=>({loaded:3,total:3})};
 new Function(...Object.keys(dependencies),source)(...Object.values(dependencies));
 await new Promise(resolve=>setImmediate(resolve));
 const key=(code,key,up=false)=>{for(const fn of listeners.get(up?'keyup':'keydown')||[])fn({code,key,preventDefault(){}});};

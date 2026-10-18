@@ -20,11 +20,21 @@ needed at runtime. The game adjusts body paint, glazing, lamps, placement and
 wheel pivots, and adds arcade driving behavior. These adaptations are not an
 endorsement by the model creator or vehicle manufacturer.
 
-The geometry was also simplified offline using meshoptimizer v1.0 with normals as attributes, reducing it from 358,788 to 100,199 triangles. Nodes, materials, UVs and independent wheel assemblies are retained.
+The launch-beta asset keeps the original exterior body, glass and rim geometry.
+Other details are reduced offline with meshoptimizer v1.0; hidden cabin/chrome
+detail and rubber/brake meshes replaced at runtime are omitted. The prepared
+GLB has 117,007 triangles and is about 4.2 MB. Nodes, wheel pivots, source UVs and
+normals on retained surfaces remain intact. This replaces the earlier aggressive
+whole-model reduction, which damaged thin exterior panels.
 
-The expanded file retains attribution in its glTF asset extras. The world layout is an original code-generated design.
+Runtime additions include round treaded rubber, non-rolling brake discs and
+calipers, a lightweight dark cabin, and the previously added coupe roof/rear
+glazing. These are game-created adaptations, not supplied or endorsed by the
+original model creator or vehicle manufacturer. The mounted model traverses
+112,757 triangles after wheel trimming and additions.
 
-The current game also adds a lightweight painted coupe roof and rear glazing to close the open roof area. These are game-created additions and are not geometry supplied or endorsed by the original model creator. The game renders 100,441 triangles including these additions; the optimized GLB itself remains 100,199 triangles.
+The expanded file retains attribution in its glTF asset extras. The world layout
+is an original code-generated design.
 
 # Additional real-car models and traffic adaptations
 

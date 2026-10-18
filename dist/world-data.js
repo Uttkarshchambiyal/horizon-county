@@ -1,7 +1,7 @@
 import * as THREE from './vendor/three.module.min.js';
-import {createRegionLayout} from './region-data.js?v=high-speed-steering-12';
-import {createStreetDetails} from './street-details.js?v=high-speed-steering-12';
-import {createDistrictLife,deckSurface} from './district-life.js?v=high-speed-steering-12';
+import {createRegionLayout} from './region-data.js?v=launch-beta-13';
+import {createStreetDetails} from './street-details.js?v=launch-beta-13';
+import {createDistrictLife,deckSurface} from './district-life.js?v=launch-beta-13';
 export const ROAD_SURFACE=.095;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};

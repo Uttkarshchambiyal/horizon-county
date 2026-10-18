@@ -1,10 +1,10 @@
-import {advanceAxles,steeringLimit,accumulateWheelTravel,roadCorneringGrip} from './steering.js?v=high-speed-steering-12';
-import {clamp} from './world-data.js?v=high-speed-steering-12';
-import {vehicleSpec} from './vehicle-data.js?v=high-speed-steering-12';
+import {advanceAxles,steeringLimit,rackLimit,accumulateWheelTravel,roadCorneringGrip} from './steering.js?v=launch-beta-13';
+import {clamp} from './world-data.js?v=launch-beta-13';
+import {vehicleSpec} from './vehicle-data.js?v=launch-beta-13';
 const approach=(value,target,amount)=>value<target?Math.min(target,value+amount):Math.max(target,value-amount);
 export function newDriveState(world,spawn=world.spawns[0],vehicleId='clubsport'){
   return {x:spawn.x,z:spawn.z,y:world.surface(spawn.x,spawn.z).height+.55,heading:spawn.heading||0,motionHeading:spawn.heading||0,
-    vehicleId,speed:0,steering:0,steerAngle:0,yawRate:0,lateralAcceleration:0,longitudinalAcceleration:0,verticalSpeed:0,reverseHold:0,wheelTravel:0,wheelDistances:[0,0,0,0],boost:100,elapsed:0,distance:0,maxSpeed:0,grounded:true,waterTime:0,hitCooldown:0,
+    vehicleId,speed:0,steering:0,steerAngle:0,pathSteerAngle:0,yawRate:0,lateralAcceleration:0,longitudinalAcceleration:0,verticalSpeed:0,reverseHold:0,wheelTravel:0,wheelDistances:[0,0,0,0],boost:100,elapsed:0,distance:0,maxSpeed:0,grounded:true,waterTime:0,hitCooldown:0,
     lastSafe:{x:spawn.x,z:spawn.z,heading:spawn.heading||0}};
 }
 export function recoverCar(state,world,spawn){
@@ -34,18 +34,23 @@ export function stepDrive(state,world,input,dt){
   if(state.speed>top)state.speed=approach(state.speed,top,18*dt);
   state.speed=clamp(state.speed,-9,boostTop);if(!gas&&!brake&&Math.abs(state.speed)<.08)state.speed=0;
   state.maxSpeed=Math.max(state.maxSpeed,Math.abs(state.speed));
-  // The rack angle drives the rear-axle path. There is no separate heading
-  // filter that can make the body slide away from its visible wheel direction.
+  // The rack steers the tires first. At high speed front tire slip bounds the
+  // axle curvature; it does not reduce visible steering to an almost-zero rack.
   const steer=clamp(input.steer||0,-1,1),fastResponse=clamp((speed-20)/25,0,1),steeringRate=steer===0?5.5+4.5*fastResponse:steer*state.steering<0?5+7*fastResponse:3.8+3.2*fastResponse;
   state.steering=approach(state.steering,steer,steeringRate*dt);
   const turnSpeed=Math.max(Math.abs(oldSpeed),Math.abs(state.speed));
   const grip=(start.onRoad?roadCorneringGrip(turnSpeed,spec.grip):spec.suv?9:7)*(tune.grip??1)*(input.drift?.72:1);
   const limit=steeringLimit(turnSpeed,spec.wheelbase,grip);
-  state.steerAngle=clamp(approach(state.steerAngle,-state.steering*limit,(2.9/(1+Math.abs(state.speed)/30))*dt),-limit,limit);
+  const rack=rackLimit(turnSpeed,limit);
+  state.steerAngle=clamp(approach(state.steerAngle,-state.steering*rack,(3.8/(1+Math.abs(state.speed)/60))*dt),-rack,rack);
+  state.pathSteerAngle=state.steerAngle*Math.min(1,limit/rack);
+  // Sustained steering beyond available cornering grip scrubs speed naturally.
+  // Small steering corrections stay within grip and do not trigger this drag.
+  if(state.grounded){const slip=Math.abs(state.steerAngle-state.pathSteerAngle),heldTurn=clamp((Math.abs(state.steering)-.45)/.55,0,1);state.speed=approach(state.speed,0,Math.min(6,slip*Math.abs(state.speed)*1.1)*heldTurn*dt);}
   const oldX=state.x,oldZ=state.z,oldHeading=state.heading,distance=(oldSpeed+state.speed)*.5*dt;
   let proposedX,proposedZ;
   if(state.grounded){
-    const next=advanceAxles(state.x,state.z,state.heading,spec,distance,state.steerAngle);
+    const next=advanceAxles(state.x,state.z,state.heading,spec,distance,state.pathSteerAngle);
     proposedX=next.x;proposedZ=next.z;state.heading=next.heading;state.yawRate=(state.heading-oldHeading)/dt;
   }else{
     // Steering airborne tires cannot create a new ground-contact turning force.

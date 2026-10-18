@@ -1,9 +1,9 @@
-import {finishPlayerWheels} from './wheel-finish.js?v=high-speed-steering-12';
+import {finishPlayerWheels} from './wheel-finish.js?v=launch-beta-13';
 import * as THREE from './vendor/three.module.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
-import {VEHICLES,vehicleSpec} from './vehicle-data.js?v=high-speed-steering-12';
-import {fleetModel} from './traffic-models.js?v=high-speed-steering-12';
-import {mountSportsCar} from './sports-car.js?v=high-speed-steering-12';
+import {VEHICLES,vehicleSpec} from './vehicle-data.js?v=launch-beta-13';
+import {fleetModel} from './traffic-models.js?v=launch-beta-13';
+import {mountSportsCar} from './sports-car.js?v=launch-beta-13';
 export {VEHICLES,vehicleSpec};
 function disposeTree(root,keep=new Set()){
   const geometries=new Set(),materials=new Set(),textures=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m&&!keep.has(m))materials.add(m);});
@@ -46,17 +46,17 @@ export function mountDetailedVehicle(vehicle,gltf){
 }
 // One download at a time. A selection change cancels the old fetch; at most
 // three detailed cars are kept resident, with identical real-mesh fallbacks.
-export function createGarageLoader(garage,{maxDetailed=3}={}){
+export function createGarageLoader(garage,{maxDetailed=3,loadTimeoutMs=15000}={}){
   let active,controller,clock=0;const lastUsed=new Map();
   function trim(){const ready=garage.filter(v=>v.assetReady);while(ready.length>maxDetailed){const stale=ready.filter(v=>v!==active).sort((a,b)=>(lastUsed.get(a)||0)-(lastUsed.get(b)||0))[0];mountTrafficVehicle(stale);stale.assetStatus='idle';ready.splice(ready.indexOf(stale),1);}}
   return {async select(vehicle,onProgress){
     active=vehicle;lastUsed.set(vehicle,++clock);controller?.abort();controller=null;if(vehicle.assetReady){trim();return vehicle;}
-    const request=new AbortController();controller=request;vehicle.pendingRequest=request;vehicle.assetStatus='loading';onProgress?.({loaded:0,total:0});
+    const request=new AbortController();let timedOut=false;const timer=setTimeout(()=>{timedOut=true;request.abort();},loadTimeoutMs);controller=request;vehicle.pendingRequest=request;vehicle.assetStatus='loading';onProgress?.({loaded:0,total:0});
     try{
       const response=await fetch(vehicle.spec.file,{signal:request.signal});if(!response.ok)throw Error('Model download failed ('+response.status+')');const data=await response.arrayBuffer();if(request.signal.aborted)return vehicle;
       const gltf=await new GLTFLoader().parseAsync(data,'');if(request.signal.aborted||active!==vehicle){disposeTree(gltf.scene);return vehicle;}
       vehicle.lampMaterials=[];mountDetailedVehicle(vehicle,gltf);vehicle.assetStatus='ready';trim();return vehicle;
-    }catch(error){if(error.name!=='AbortError'){vehicle.assetStatus='error';throw error;}return vehicle;}
-    finally{if(controller===request)controller=null;if(vehicle.pendingRequest===request){vehicle.pendingRequest=null;if(vehicle.assetStatus==='loading')vehicle.assetStatus='idle';}}
+    }catch(error){if(timedOut){if(vehicle.pendingRequest===request)vehicle.assetStatus='error';throw Error('Model download timed out');}if(error.name!=='AbortError'){if(vehicle.pendingRequest===request)vehicle.assetStatus='error';throw error;}return vehicle;}
+    finally{clearTimeout(timer);if(controller===request)controller=null;if(vehicle.pendingRequest===request){vehicle.pendingRequest=null;if(vehicle.assetStatus==='loading')vehicle.assetStatus='idle';}}
   },get resident(){return garage.filter(v=>v.assetReady).map(v=>v.spec.id);}};
 }

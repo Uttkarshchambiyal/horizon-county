@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import {seeded} from './world-data.js?v=high-speed-steering-12';
+import {seeded} from './world-data.js?v=launch-beta-13';
 
 // Four floors and bays per atlas break the one-identical-window repetition.
 // Photos supply masonry grain; window masks keep glass smooth and reflective.

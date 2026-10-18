@@ -1,11 +1,11 @@
 import * as THREE from './vendor/three.module.min.js';
-import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=high-speed-steering-12';
-import {buildCity} from './city-view.js?v=high-speed-steering-12';
-import {buildRegions} from './region-view.js?v=high-speed-steering-12';
-import {streamStaticWorld} from './world-streaming.js?v=high-speed-steering-12';
-import {surfaceDepthBias} from './render-quality.js?v=high-speed-steering-12';
-import {buildPedestrians} from './pedestrians.js?v=high-speed-steering-12';
-import {addGroundContact} from './lighting.js?v=high-speed-steering-12';
+import {terrainHeight,coast,seeded,BOUNDS,ROAD_SURFACE} from './world-data.js?v=launch-beta-13';
+import {buildCity} from './city-view.js?v=launch-beta-13';
+import {buildRegions} from './region-view.js?v=launch-beta-13';
+import {streamStaticWorld} from './world-streaming.js?v=launch-beta-13';
+import {surfaceDepthBias} from './render-quality.js?v=launch-beta-13';
+import {buildPedestrians} from './pedestrians.js?v=launch-beta-13';
+import {addGroundContact} from './lighting.js?v=launch-beta-13';
 
 export function buildOpenWorld(scene,world,{reversedDepth=false}={}){
   const group=new THREE.Group();scene.add(group);

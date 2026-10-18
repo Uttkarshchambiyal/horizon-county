@@ -1,4 +1,6 @@
-import {UPGRADES} from './career.js?v=high-speed-steering-12';
+import {UPGRADES,eventMedal} from './career.js?v=launch-beta-13';
+import {runShareText} from './first-drive.js?v=launch-beta-13';
+import {vehicleSpec} from './vehicle-data.js?v=launch-beta-13';
 const $=id=>document.getElementById(id);
 export const money=value=>'$'+Math.floor(value).toLocaleString('en-US');
 export const clock=value=>{const n=Math.max(0,value);return Math.floor(n/60)+':'+String(Math.floor(n%60)).padStart(2,'0')+'.'+Math.floor(n%1*10);};
@@ -8,6 +10,12 @@ export function createCareerUI({career,activities,planner,getState,getVehicle,st
   const card=a=>`<button class="activity-card" id="activity-${a.id}" data-activity="${a.id}"><span>${a.district} / ${a.kind==='delivery'?'DELIVERY':'CHECKPOINT RACE'}</span><strong>${a.name}</strong><p>${a.description}</p><div><b>${money(a.reward)} BASE</b><span>${Math.round(a.limit/60*10)/10} MIN LIMIT</span></div><small>No completed run yet</small><em>${a.kind==='delivery'?'TAKE JOB':'ENTER RACE'} <span>↗</span></em></button>`;
   $('job-cards').innerHTML=activities.filter(a=>a.kind==='delivery').map(card).join('');$('race-cards').innerHTML=activities.filter(a=>a.kind==='race').map(card).join('');
   const buttons=[...document.querySelectorAll('[data-activity]')];for(const button of buttons)button.addEventListener('click',()=>startActivity(button.dataset.activity));
+  $('daily-start').addEventListener('click',()=>startActivity(career.featured().activity.id));
+  $('share-result').addEventListener('click',async()=>{
+    const text=runShareText(career.result,vehicleSpec(getVehicle()).name);if(!text)return;
+    try{await navigator.clipboard.writeText(text);$('share-status').textContent='RESULT COPIED / READY TO PASTE';}
+    catch{$('share-status').textContent='SELECT THE TEXT BELOW AND COPY IT';$('share-text').focus();$('share-text').select();}
+  });
   $('upgrade-options').innerHTML=UPGRADES.map(u=>`<button class="upgrade-card" data-upgrade="${u.id}"></button>`).join('');
   const upgradeButtons=[...document.querySelectorAll('[data-upgrade]')];for(const button of upgradeButtons)button.addEventListener('click',()=>purchase(button.dataset.upgrade));
   function renderGarage(){
@@ -15,12 +23,15 @@ export function createCareerUI({career,activities,planner,getState,getVehicle,st
     for(const button of upgradeButtons){const u=UPGRADES.find(u=>u.id===button.dataset.upgrade),level=levels[u.id]||0,cost=u.costs[level],max=level===3;button.disabled=max||career.profile.credits<cost;button.innerHTML=`<span>${u.name} <b>LV ${level} / 3</b></span><small>${u.description}</small><i>${[0,1,2].map(i=>`<em class="${level>i?'installed':''}"></em>`).join('')}</i><strong>${max?'FULLY UPGRADED':money(cost)+' / INSTALL ↗'}</strong>`;button.setAttribute('aria-label',u.name+', level '+level+' of 3'+(max?', fully upgraded':', costs '+money(cost)));}
   }
   function renderBoard(){
+    const daily=career.featured();$('daily-name').textContent=daily.activity.name;$('daily-district').textContent=daily.activity.district+' / '+daily.day+' UTC';$('daily-status').textContent=daily.claimed?'BONUS COLLECTED / PLAY AGAIN FOR A BETTER TIME':'COMPLETE TODAY’S DRIVE FOR +'+money(daily.bonus)+' EXTRA';$('daily-start').disabled=!!career.active;$('daily-start').textContent=daily.claimed?'DRIVE AGAIN ↗':'TAKE TODAY’S DRIVE ↗';$('menu-daily-name').textContent=daily.activity.name+' / '+(daily.claimed?'BONUS COLLECTED':'+'+money(daily.bonus)+' BONUS');
     $('career-credits').textContent=money(career.profile.credits);$('career-completed').textContent=career.profile.completed.length+' / '+activities.length+' EVENTS COMPLETED';
+    const medals=activities.map(a=>eventMedal(a,career.profile.bests[a.id]));$('medal-count').textContent=medals.filter(Boolean).length+' / '+activities.length+' MEDALS · '+medals.filter(m=>m==='gold').length+' GOLD';
     $('career-save-status').textContent=career.saveAvailable?'REWARDS & UPGRADES SAVED IN THIS BROWSER':'BROWSER STORAGE UNAVAILABLE / THIS SESSION ONLY';
-    for(const button of buttons){const id=button.dataset.activity;button.disabled=!!career.active;button.querySelector('small').textContent=career.profile.bests[id]?'PERSONAL BEST / '+clock(career.profile.bests[id]):'NO COMPLETED RUN YET';}
+    for(const button of buttons){const id=button.dataset.activity,a=activities.find(a=>a.id===id),best=career.profile.bests[id],medal=eventMedal(a,best);button.disabled=!!career.active;button.dataset.medal=medal||'';button.querySelector('small').textContent=(medal?medal.toUpperCase()+' / BEST '+clock(best):'NO MEDAL YET')+' · GOLD ≤ '+clock(a.limit*.9);}
     $('active-contract').classList.toggle('hidden',!career.active);$('active-contract-name').textContent=career.active?.definition.name||'';
     const result=career.result;$('activity-summary').classList.toggle('hidden',!result);
-    if(result){$('activity-result-title').textContent=result.success?'DELIVERED. EARNED.':'ANOTHER TRY.';$('activity-result-name').textContent=result.name;$('activity-result-reward').textContent=result.success?'+'+money(result.reward):result.reason;$('activity-result-detail').textContent=result.success?clock(result.elapsed)+(result.newBest?' / PERSONAL BEST':'')+' · CLEAN BONUS '+money(result.cleanBonus)+' · TIME BONUS '+money(result.timeBonus):'No credits lost. Choose an event when you’re ready.';}
+    if(result){$('activity-result-title').textContent=result.success?(result.medal||'bronze').toUpperCase()+' MEDAL / RUN COMPLETE':'ANOTHER TRY.';$('activity-result-name').textContent=result.name;$('activity-result-reward').textContent=result.success?'+'+money(result.reward):result.reason;$('activity-result-detail').textContent=result.success?clock(result.elapsed)+(result.newBest?' / PERSONAL BEST':'')+' · CLEAN '+money(result.cleanBonus)+' · TIME '+money(result.timeBonus)+(result.dailyBonus?' · DAILY +'+money(result.dailyBonus):''):'No credits lost. Choose an event when you’re ready.';}
+    $('share-run').classList.toggle('hidden',!result?.success);$('share-text').value=runShareText(result,vehicleSpec(getVehicle()).name);$('share-status').textContent='PERSONAL RESULT / SAVED ON THIS BROWSER';
     renderGarage();
   }
   function update(force=false){

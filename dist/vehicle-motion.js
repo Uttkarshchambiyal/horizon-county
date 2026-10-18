@@ -1,5 +1,5 @@
 // All wheel animation follows travelled distance and the physics steering angle.
-import {wheelAngles} from './steering.js?v=high-speed-steering-12';
+import {wheelAngles} from './steering.js?v=launch-beta-13';
 export {wheelAngles};
 export function animateVehicle(vehicle,state,previous,alpha=1){
   const {spec}=vehicle,angles=wheelAngles(state.steerAngle||0,spec.wheelbase,spec.track||spec.width*.84);

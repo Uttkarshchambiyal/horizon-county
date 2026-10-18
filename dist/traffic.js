@@ -1,7 +1,7 @@
-import {accumulateWheelTravel} from './steering.js?v=high-speed-steering-12';
-import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=high-speed-steering-12';
-import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=high-speed-steering-12';
-import {vehicleSpec} from './vehicles.js?v=high-speed-steering-12';
+import {accumulateWheelTravel} from './steering.js?v=launch-beta-13';
+import {clamp,terrainHeight,seeded,ROAD_SURFACE} from './world-data.js?v=launch-beta-13';
+import {FLEET_TYPES,FLEET_FOOTPRINTS} from './fleet-data.js?v=launch-beta-13';
+import {vehicleSpec} from './vehicles.js?v=launch-beta-13';
 
 // A small, deterministic fleet follows continuous right-hand lanes. It runs on
 // the same fixed clock as the player, so pausing freezes cars and signals.

@@ -1,9 +1,9 @@
-import {trafficWheelGeometry} from './wheel-finish.js?v=high-speed-steering-12';
+import {trafficWheelGeometry} from './wheel-finish.js?v=launch-beta-13';
 import * as THREE from './vendor/three.module.min.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
-import {REAL_CAR_MESHES} from './real-car-meshes.js?v=high-speed-steering-12';
-import {vehicleSpec} from './vehicle-data.js?v=high-speed-steering-12';
-export {FLEET_TYPES} from './fleet-data.js?v=high-speed-steering-12';
+import {REAL_CAR_MESHES} from './real-car-meshes.js?v=launch-beta-13';
+import {vehicleSpec} from './vehicle-data.js?v=launch-beta-13';
+export {FLEET_TYPES} from './fleet-data.js?v=launch-beta-13';
 const cache=new Map();
 function bytes(value){return Uint8Array.from(atob(value),c=>c.charCodeAt(0));}
 function geometry(data){

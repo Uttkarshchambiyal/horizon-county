@@ -1,24 +1,25 @@
 import * as THREE from './vendor/three.module.min.js';
-import {addReflections} from './car.js?v=high-speed-steering-12';
-import {createDrivingControls} from './controls.js?v=high-speed-steering-12';
-import {makeOpenWorld,terrainHeight,coast,clamp} from './world-data.js?v=high-speed-steering-12';
-import {buildOpenWorld} from './world-view.js?v=high-speed-steering-12';
-import {newDriveState,stepDrive,recoverCar} from './driving.js?v=high-speed-steering-12';
-import {VEHICLES,createVehicle,createGarageLoader} from './vehicles.js?v=high-speed-steering-12';
-import {makeTraffic,stepTraffic,collideTraffic} from './traffic.js?v=high-speed-steering-12';
-import {buildTrafficView} from './traffic-view.js?v=high-speed-steering-12';
-import {loadWorldAssets} from './assets.js?v=high-speed-steering-12';
-import {animateVehicle} from './vehicle-motion.js?v=high-speed-steering-12';
-import {createEngineAudio,engineTelemetry} from './engine-audio.js?v=high-speed-steering-12';
-import {createActivities,createCareer} from './career.js?v=high-speed-steering-12';
-import {createRoutePlanner} from './navigation.js?v=high-speed-steering-12';
-import {createCareerUI} from './career-ui.js?v=high-speed-steering-12';
-import {buildActivityView} from './activity-view.js?v=high-speed-steering-12';
-import {createPerformanceCapture} from './performance-capture.js?v=high-speed-steering-12';
-import {createPerformanceUI} from './performance-ui.js?v=high-speed-steering-12';
-import {LIGHTING_MOODS} from './lighting.js?v=high-speed-steering-12';
-import {reactToHorn} from './traffic.js?v=high-speed-steering-12';
-import {renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias} from './render-quality.js?v=high-speed-steering-12';
+import {addReflections} from './car.js?v=launch-beta-13';
+import {createDrivingControls} from './controls.js?v=launch-beta-13';
+import {makeOpenWorld,terrainHeight,coast,clamp} from './world-data.js?v=launch-beta-13';
+import {buildOpenWorld} from './world-view.js?v=launch-beta-13';
+import {newDriveState,stepDrive,recoverCar} from './driving.js?v=launch-beta-13';
+import {VEHICLES,createVehicle,createGarageLoader} from './vehicles.js?v=launch-beta-13';
+import {makeTraffic,stepTraffic,collideTraffic} from './traffic.js?v=launch-beta-13';
+import {buildTrafficView} from './traffic-view.js?v=launch-beta-13';
+import {loadWorldAssets} from './assets.js?v=launch-beta-13';
+import {animateVehicle} from './vehicle-motion.js?v=launch-beta-13';
+import {createEngineAudio,engineTelemetry} from './engine-audio.js?v=launch-beta-13';
+import {createActivities,createCareer} from './career.js?v=launch-beta-13';
+import {createRoutePlanner} from './navigation.js?v=launch-beta-13';
+import {createCareerUI} from './career-ui.js?v=launch-beta-13';
+import {createFirstDrive,trapDialogTab,waitForStartup} from './first-drive.js?v=launch-beta-13';
+import {buildActivityView} from './activity-view.js?v=launch-beta-13';
+import {createPerformanceCapture} from './performance-capture.js?v=launch-beta-13';
+import {createPerformanceUI} from './performance-ui.js?v=launch-beta-13';
+import {LIGHTING_MOODS} from './lighting.js?v=launch-beta-13';
+import {reactToHorn} from './traffic.js?v=launch-beta-13';
+import {renderPixelRatio,createFrameBudget,stabilizeSun,surfaceDepthBias} from './render-quality.js?v=launch-beta-13';
 const $=id=>document.getElementById(id),canvas=$('world');
 let renderer;
 try{const context=canvas.getContext('webgl2',{antialias:true,powerPreference:'high-performance'}),reversedDepth=!!context?.getExtension?.('EXT_clip_control');renderer=new THREE.WebGLRenderer({canvas,context,antialias:true,reversedDepthBuffer:reversedDepth,logarithmicDepthBuffer:!reversedDepth,powerPreference:'high-performance'});}catch(error){$('loading').classList.add('hidden');$('fatal-error').classList.remove('hidden');$('error-message').textContent='This world needs a browser with WebGL and hardware acceleration.';throw error;}
@@ -34,6 +35,7 @@ const reversedDepth=!!renderer.capabilities?.reversedDepthBuffer;
 const world=makeOpenWorld(),view=buildOpenWorld(scene,world,{reversedDepth});
 let careerStorage;try{careerStorage=localStorage;}catch{}
 const activities=createActivities(world),career=createCareer(activities,careerStorage),planner=createRoutePlanner(world),activityView=buildActivityView(scene,world,reversedDepth),performanceCapture=createPerformanceCapture();
+const firstDrive=createFirstDrive(careerStorage);
 let careerUI,performanceUI,hornUntil=0,incidentCooldown=0,modeBeforeJobs='menu';
 const car=new THREE.Group();scene.add(car);
 const garage=VEHICLES.map(v=>createVehicle(car,v.id)),garageLoader=createGarageLoader(garage);
@@ -66,6 +68,11 @@ const audio=createEngineAudio();
 function initAudio(){audio.start();}
 function clearInput(){audio.silence();controls.clear();Object.keys(touch).forEach(k=>touch[k]=false);document.querySelectorAll('[data-control]').forEach(b=>b.classList.remove('pressed'));}
 function focusGame(){canvas.focus({preventScroll:true});}
+function updateFirstDrive(){
+  const visible=mode==='playing'&&!firstDrive.done&&!career.active;$('first-drive').classList.toggle('hidden',!visible);if(!visible)return;
+  const steps=[['01 / FIND YOUR PACE','Hold W or GAS to accelerate. You’re fully in control.'],['02 / FOLLOW YOUR FRONT WHEELS','Hold W + A or D, or GAS + an arrow, to make a turn.'],['03 / LEAVE ROOM TO STOP','Hold S or BRAKE until you slow to a stop. J opens jobs and races.']];
+  $('lesson-title').textContent=steps[firstDrive.step][0];$('lesson-detail').textContent=steps[firstDrive.step][1];$('lesson-progress').style.width=(firstDrive.step+1)/3*100+'%';
+}
 function sync(){state.tuning=career.effects(currentCar.spec.id);careerUI?.update(true);activityView.update(career,state,time);previous={...state,wheelDistances:[...state.wheelDistances]};accumulator=0;trafficView.update(1,state);view.population.update(populationTime,state,{hornUntil,trafficTime:traffic.time,signalsEnabled:traffic.enabled});positionCar(0,1);updateCamera(1,true);view.visibility.update(state.x,state.z,preference.quality,true,camera,preference.quality==='auto'?frameBudget.status.tier:0);updateHUD();renderDirty=true;if(graphicsReady)renderer.render(scene,camera);}
 function toast(title,sub='',duration=2.5){$('toast').textContent=title;if(sub){const small=document.createElement('small');small.textContent=sub;$('toast').appendChild(small);}$('toast').classList.add('visible');toastTime=duration;}
 function selectSpawn(index){selected=index;state=newDriveState(world,world.spawns[index],currentCar.spec.id);clearInput();sync();document.querySelectorAll('[data-spawn]').forEach(b=>{const on=+b.dataset.spawn===index;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});}
@@ -88,7 +95,7 @@ function setVehicle(id){
   garage.forEach(v=>{v.car.visible=v===currentCar;});
   headlights.forEach(l=>{l.position.y=currentCar.spec.suv?.46:.21;l.position.z=-currentCar.spec.length/2-.05;});
   const paint=preference.paints[currentCar.spec.id];if(currentCar.spec.paintable!==false&&typeof paint==='string'&&/^#[0-9a-f]{6}$/i.test(paint))bodyMat.color.set(paint);
-  preference.vehicle=currentCar.spec.id;state.vehicleId=currentCar.spec.id;state.speed=0;state.steering=0;state.motionHeading=state.heading;state.steerAngle=0;state.yawRate=0;state.wheelTravel=0;state.wheelDistances=[0,0,0,0];state.verticalSpeed=0;state.reverseHold=0;state.longitudinalAcceleration=0;state.grounded=true;state.y=world.surface(state.x,state.z).height+.55;lastSpeed=0;acceleration=0;
+  preference.vehicle=currentCar.spec.id;state.vehicleId=currentCar.spec.id;state.speed=0;state.steering=0;state.motionHeading=state.heading;state.steerAngle=0;state.pathSteerAngle=0;state.yawRate=0;state.wheelTravel=0;state.wheelDistances=[0,0,0,0];state.verticalSpeed=0;state.reverseHold=0;state.longitudinalAcceleration=0;state.grounded=true;state.y=world.surface(state.x,state.z).height+.55;lastSpeed=0;acceleration=0;
   $('car-name').textContent=currentCar.spec.name.toUpperCase();$('car-class').textContent=currentCar.spec.className;
   $('garage-description').textContent=currentCar.spec.description;
   document.querySelectorAll('[data-vehicle]').forEach(b=>{const active=b.dataset.vehicle===currentCar.spec.id;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
@@ -178,7 +185,7 @@ function updateCamera(dt,snap=false){
   camera.position.lerp(cameraGoal,snap?1:1-Math.exp(-9*dt));look.lerp(lookGoal,snap?1:1-Math.exp(-11*dt));if(mode!=='menu'&&!(mode==='garage'&&modeBeforeGarage==='menu')){const safe=world.resolve(camera.position.x,camera.position.z,0,.3,0);camera.position.x=safe.x;camera.position.z=safe.z;}camera.lookAt(look);
   const fov=mode==='menu'?49:57,next=snap?fov:THREE.MathUtils.damp(camera.fov,fov,4,dt);if(Math.abs(next-camera.fov)>.001){camera.fov=next;camera.updateProjectionMatrix();}
 }
-function updateHUD(){careerUI.update();performanceUI.update();const input=controls.read(touch),surface=world.surface(state.x,state.z);
+function updateHUD(){careerUI.update();performanceUI.update();updateFirstDrive();const input=controls.read(touch),surface=world.surface(state.x,state.z);
   $('district-label').textContent=surface.district;$('road-label').textContent=surface.road;$('distance-value').textContent=(state.distance/1000).toFixed(2);$('discovery-value').textContent=`${visited.size} / 6 PLACES DISCOVERED`;
   $('speed').textContent=String(Math.round(Math.abs(state.speed)*3.6)).padStart(3,'0');const engine=engineTelemetry(state,input);$('camera-view-button').textContent=['C / CHASE','C / LOW','C / HIGH','C / WHEELS'][cameraMode];$('gear').textContent=engine.gear<0?'R':engine.gear===0?'N':engine.gear;$('rpm-value').textContent=Math.round(engine.rpm/100)*100+' RPM';$('boost-fill').style.width=state.boost+'%';
   $('surface-label').textContent=(surface.water?'IN WATER / R TO RECOVER':surface.onRoad?'ASPHALT':'OFF ROAD')+' / LIGHTS '+(lights?'ON':'OFF');
@@ -188,7 +195,7 @@ function updateHUD(){careerUI.update();performanceUI.update();const input=contro
   drawMinimap();
 }
 function physics(dt){populationTime+=dt;incidentCooldown=Math.max(0,incidentCooldown-dt);Object.assign(previous,state,{wheelDistances:[...state.wheelDistances]});const impactSpeed=Math.abs(state.speed);stepTraffic(traffic,world,state,dt,view.population.nearby);for(const event of stepDrive(state,world,controls.read(touch),dt)){if(event==='recover'){career.recover();Object.assign(previous,state,{wheelDistances:[...state.wheelDistances]});toast('RETURNED TO THE ROAD','WATER RECOVERY');}else if(event==='collision'){career.incident();audio.effect('impact',impactSpeed/30);}else if(event==='land')audio.effect('impact',.25);}
-  if(collideTraffic(state,traffic)&&impactSpeed>4){audio.effect('impact',impactSpeed/30);if(incidentCooldown===0){career.incident();incidentCooldown=1;}}career.update(dt,state);if(state.grounded)state.y=Math.max(state.y,world.surface(state.x,state.z).height+.55);acceleration=(state.speed-lastSpeed)/dt;lastSpeed=state.speed;
+  if(collideTraffic(state,traffic)&&impactSpeed>4){audio.effect('impact',impactSpeed/30);if(incidentCooldown===0){career.incident();incidentCooldown=1;}}career.update(dt,state);const wasLearning=!firstDrive.done;firstDrive.update(state,controls.read(touch));if(wasLearning&&firstDrive.done)toast('YOU’RE READY FOR THE ROAD','J / TAKE A DELIVERY OR CHASE A RACE MEDAL');if(state.grounded)state.y=Math.max(state.y,world.surface(state.x,state.z).height+.55);acceleration=(state.speed-lastSpeed)/dt;lastSpeed=state.speed;
   for(const l of world.landmarks)if(!visited.has(l.name)&&Math.hypot(state.x-l.x,state.z-l.z)<38){visited.add(l.name);toast(l.name.toUpperCase(),'NEW PLACE DISCOVERED');try{localStorage.setItem('horizon-world-discoveries-v1',JSON.stringify([...visited]));}catch{}}
 }
 function frame(timestamp){requestAnimationFrame(frame);if(!lastTime)lastTime=timestamp;const rawDt=(timestamp-lastTime)/1000||.016,dt=Math.min(rawDt,.1);lastTime=timestamp;if(!graphicsReady)return;if(document.hidden){wasPlaying=false;performanceCapture.interrupt();return;}
@@ -209,6 +216,10 @@ function frame(timestamp){requestAnimationFrame(frame);if(!lastTime)lastTime=tim
 }
 // Keyboard input is attached in capture phase and focuses the canvas explicitly.
 window.addEventListener('keydown',event=>{
+  if(event.key==='Tab'){
+    const dialogId={paused:'pause-overlay',map:'map-overlay',help:'help-overlay',garage:'garage-overlay',settings:'settings-overlay',jobs:'jobs-overlay'}[mode],panel=!$('fatal-error').classList.contains('hidden')?$('fatal-error'):dialogId?$(dialogId):null;
+    if(trapDialogTab(event,panel,document.activeElement))return;
+  }
   if(controls.keydown(event,mode==='playing'))return;if(event.repeat||event.ctrlKey||event.metaKey||event.altKey)return;
   const key=(event.key||'').toLowerCase(),code=event.code;
   if(code==='KeyJ'||key==='j'){event.preventDefault();openJobs();return;}
@@ -229,6 +240,9 @@ document.querySelectorAll('[data-spawn]').forEach(b=>b.addEventListener('click',
 document.querySelectorAll('[data-paint]').forEach(b=>b.addEventListener('click',()=>{if(currentCar.spec.paintable===false)return;bodyMat.color.set(b.dataset.paint);preference.paints[currentCar.spec.id]=b.dataset.paint;savePreferences();syncPaintControls();}));
 document.querySelectorAll('[data-vehicle]').forEach(b=>b.addEventListener('click',()=>setVehicle(b.dataset.vehicle)));
 $('horn-button').addEventListener('click',honk);
+$('dismiss-lesson').addEventListener('click',()=>{firstDrive.dismiss();updateFirstDrive();focusGame();});
+$('replay-lesson').addEventListener('click',()=>{firstDrive.restart();closeHelp();if(mode==='menu')startDrive();else if(mode==='paused')resume();updateFirstDrive();focusGame();});
+$('menu-daily-button').addEventListener('click',openJobs);
 $('jobs-button').addEventListener('click',openJobs);$('menu-jobs-button').addEventListener('click',openJobs);$('objective-card').addEventListener('click',openJobs);$('close-jobs').addEventListener('click',closeJobs);$('resume-contract').addEventListener('click',closeJobs);$('abandon-contract').addEventListener('click',()=>{career.abandon();careerUI.update(true);careerUI.renderBoard();});
 $('garage-button').addEventListener('click',openGarage);$('menu-garage-button').addEventListener('click',openGarage);$('close-garage').addEventListener('click',closeGarage);$('use-car').addEventListener('click',closeGarage);
 $('settings-button').addEventListener('click',openSettings);$('close-settings').addEventListener('click',closeSettings);$('close-settings-button').addEventListener('click',closeSettings);
@@ -242,5 +256,5 @@ document.querySelectorAll('[data-control]').forEach(button=>{const key=button.da
 window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();if(mode==='menu')updateCamera(1,true);applyQuality();});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();pause();$('fatal-error').classList.remove('hidden');$('error-message').textContent='The graphics connection was interrupted. Reload to continue driving.';});
 makeAtlas();setLighting(1);applyQuality();setVehicle(preference.vehicle);updateTrafficSetting();selectSpawn(0);
-Promise.allSettled([selectedModelPromise,worldAssetsPromise]).then(async()=>{$('loading-detail').textContent='PREPARING SHADERS / READYING THE ROAD';let timer;try{await Promise.race([renderer.compileAsync?.(scene,camera),new Promise(resolve=>{timer=setTimeout(resolve,6000);})]);}finally{clearTimeout(timer);}}).catch(()=>{}).finally(()=>{graphicsReady=true;renderDirty=true;sync();$('loading').classList.add('hidden');});requestAnimationFrame(frame);
+waitForStartup([selectedModelPromise,worldAssetsPromise]).then(async complete=>{if(!complete&&assetsStatus==='loading')assetsStatus='fallback';$('loading-detail').textContent='PREPARING SHADERS / READYING THE ROAD';let timer;try{await Promise.race([renderer.compileAsync?.(scene,camera),new Promise(resolve=>{timer=setTimeout(resolve,6000);})]);}finally{clearTimeout(timer);}}).catch(()=>{}).finally(()=>{graphicsReady=true;renderDirty=true;sync();$('loading').classList.add('hidden');});requestAnimationFrame(frame);
 window.horizon={getState:()=>({...state,mode,populationTime,world:'Horizon County',district:world.district(state.x,state.z),vehicle:currentCar.spec.id,traffic:traffic.enabled,trafficTime:traffic.time,assets:assetsStatus,carModel:{id:currentCar.spec.source,level:currentCar.assetLevel,status:currentCar.assetStatus,resident:garageLoader.resident},city:view.cityStats,fps:measuredFps,frameBudget:{...frameBudget.status},quality:preference.quality,pixelRatio:renderPixelRatio(preference.quality,devicePixelRatio,innerWidth,innerHeight,frameBudget.status.scale),career:{credits:career.profile.credits,earned:career.profile.earned,completed:[...career.profile.completed],upgrades:career.levels(currentCar.spec.id),active:career.active?{id:career.active.definition.id,phase:career.active.phase,gate:career.active.gate,elapsed:career.active.elapsed}:null,result:career.result},performanceCapture:{running:performanceCapture.running,elapsed:performanceCapture.elapsed,report:performanceCapture.report},audio:audio.status,engine:audio.telemetry,rendering:{...view.visibility.stats,population:{...view.population.stats},fleet:{...trafficView.stats}}}),getInput:()=>controls.read(touch),getRendererInfo:()=>({...renderer.info.render}),getWorld:()=>world};

@@ -38,6 +38,8 @@ try{
   for(const v of garage.slice(0,5))await loader.select(v);assert.equal(loader.resident.length,3);assert.equal(garage[0].assetLevel,'traffic');assert.equal(garage[4].assetReady,true);
   delay=true;const old=loader.select(garage[5]),latest=loader.select(garage[6]);await Promise.all([old,latest]);assert.equal(garage[5].assetReady,false);assert.equal(garage[6].assetReady,true);assert.ok(loader.resident.length<=3);
   await assert.rejects(loader.select(garage[8]),/404/);assert.equal(garage[8].assetLevel,'traffic');assert.equal(garage[8].assetStatus,'error');assert.ok(garage[8].car.children.length>0);
+  globalThis.fetch=(file,{signal})=>new Promise((resolve,reject)=>signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true}));
+  const timed=createGarageLoader(garage,{loadTimeoutMs:5});await assert.rejects(timed.select(garage[7]),/timed out/);assert.equal(garage[7].assetStatus,'error');assert.ok(garage[7].car.children.length>0,'A stalled download must leave the real-mesh fallback visible');
 }finally{globalThis.fetch=nativeFetch;}
 const storage={getItem:()=>JSON.stringify({version:1,credits:10000,upgrades:{touring:{engine:2},trail:{tires:1}}}),setItem(){}};const career=createCareer([],storage);assert.equal(career.levels('touring').engine,2);for(const spec of VEHICLES){career.profile.credits=10000;assert.equal(career.purchase(spec.id,'brakes').ok,true,'Every real car must support upgrades');}
 console.log('PASS Nine-car loading: bounded detailed residency, rapid-switch cancellation, failed-download fallback, paint-mask shader and saved legacy/new-car upgrades (geometry tests; GPU image decoding not measured)');

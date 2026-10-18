@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.min.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
-import {enableInstanceFade,distanceFade} from './render-quality.js?v=high-speed-steering-12';
+import {enableInstanceFade,distanceFade} from './render-quality.js?v=launch-beta-13';
 
 // Keep shared materials in large batches. A spatial index supplies only local
 // instances to each GPU buffer; this avoids a draw call for every small sector.
