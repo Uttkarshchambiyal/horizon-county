@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Horizon County — animated README artwork</title>
+<link rel="stylesheet" href="../../dist/vendor/fonts.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090d14;color:#f4f1ea;overflow:hidden;font-family:Barlow,sans-serif}canvas{position:absolute;top:0;left:180px;width:960px;height:480px}.shade{position:absolute;inset:0;background:linear-gradient(90deg,#090d14 0%,#090d14eb 25%,transparent 69%),linear-gradient(0deg,#090d14 0%,transparent 27%);pointer-events:none}.top{position:absolute;top:34px;left:40px;right:40px;display:flex;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:3px;color:#9aa5b5}.live{color:#ff624b}.copy{position:absolute;left:40px;top:105px}h1{font:900 98px/.84 'Barlow Condensed',sans-serif;letter-spacing:-1px;margin:0;font-style:italic}h1 span{display:block;color:#ff624b;text-shadow:1px 1px #c33c31,2px 2px #9a2f2a,3px 3px #702525,4px 4px #4b2022,5px 5px #341b20}p{font-size:15px;line-height:1.6;color:#abb6c4;max-width:280px;margin-top:25px}.line{width:42px;height:3px;background:#ff624b;margin-bottom:24px}.bottom{position:absolute;bottom:30px;left:40px;right:40px;border-top:1px solid #ffffff22;padding-top:20px;display:flex;justify-content:space-between;align-items:center}.stats{display:flex;gap:28px}.stats b{font:600 26px 'Barlow Condensed';color:#fff}.stats span{font-size:9px;letter-spacing:1.5px;color:#8c98aa;margin-left:7px}.stamp{font-size:10px;letter-spacing:2px;color:#ff806d}
+</style>
+<script type="importmap">{"imports":{"three":"../../dist/vendor/three.module.min.js"}}</script>
+<canvas id="scene"></canvas><div class="shade"></div>
+<div class="top"><span>H C &nbsp; / &nbsp; INDEPENDENT DRIVING PROJECT</span><span class="live">● &nbsp; PUBLIC BETA</span></div>
+<div class="copy"><div class="line"></div><h1>HORIZON<span>COUNTY.</span></h1><p>A city. A coastline. Your next turn.<br>Find your own way through.</p></div>
+<div class="bottom"><div class="stats"><div><b>09</b><span>REAL CARS</span></div><div><b>36.7</b><span>KM OF ROADS</span></div><div><b>03</b><span>STUNT TRACKS</span></div></div><span class="stamp">BUILT FOR THE BROWSER ↗</span></div>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from '../../dist/vendor/GLTFLoader.js';
+import {HDRLoader} from '../../dist/vendor/HDRLoader.js';
+import {mountSportsCar} from '../../dist/sports-car.js';
+const renderer=new THREE.WebGLRenderer({canvas:document.querySelector('canvas'),antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(960,480);renderer.setPixelRatio(1);renderer.setClearColor(0x090d14);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x090d14,.038);
+const camera=new THREE.PerspectiveCamera(35,2,.1,150);
+scene.add(new THREE.HemisphereLight(0xd9e9ff,0x1e1321,2.5));
+for(const [color,intensity,pos] of [[0xdceaff,30,[2,5,3]],[0xff4938,35,[-3,3,-3]],[0xffffff,25,[-4,4,4]]]){const l=new THREE.PointLight(color,intensity,30);l.position.set(...pos);scene.add(l)}
+const env=await new HDRLoader().loadAsync('../../dist/assets/kloppenheim_06_puresky_1k.hdr');env.mapping=THREE.EquirectangularReflectionMapping;scene.environment=env;scene.environmentIntensity=.8;
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(160,160),new THREE.MeshStandardMaterial({color:0x111b28,metalness:.65,roughness:.32}));floor.rotation.x=-Math.PI/2;floor.position.y=-.57;scene.add(floor);
+const grid=new THREE.GridHelper(120,80,0x47576e,0x1b2b3d);grid.position.y=-.565;scene.add(grid);
+const ring=new THREE.Mesh(new THREE.TorusGeometry(3.2,.018,8,120),new THREE.MeshBasicMaterial({color:0xff624b}));ring.rotation.x=-Math.PI/2;ring.position.y=-.55;scene.add(ring);
+const car=new THREE.Group();scene.add(car);
+const vehicle={car,spec:{id:'ferrari'},bodyMat:new THREE.MeshPhysicalMaterial({color:0xc92424}),tailMat:new THREE.MeshStandardMaterial({color:0xff2828,emissive:0xff1100,emissiveIntensity:1}),wheels:[],steerWheels:[],wheelCenters:[],flames:[]};
+mountSportsCar(vehicle,await new GLTFLoader().loadAsync('../../dist/assets/cars/ferrari-458.glb'));
+const glow=new THREE.PointLight(0xff3b28,7,8);glow.position.set(0,.1,0);car.add(glow);
+window.renderFrame=(t)=>{car.rotation.y=-.48+Math.sin(t*Math.PI*2)*.3;camera.position.set(5.4,2.65,-5.85);camera.lookAt(0,.15,0);ring.material.color.setHSL(.025+Math.sin(t*Math.PI*2)*.009,.95,.61);renderer.render(scene,camera)};
+await document.fonts.ready;window.renderFrame(0);window.artReady=true;
+if(!new URLSearchParams(location.search).has('capture')){const start=performance.now();renderer.setAnimationLoop(()=>window.renderFrame((performance.now()-start)/5000))}
+</script>
+</html>
